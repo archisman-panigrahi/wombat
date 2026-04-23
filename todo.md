@@ -1,8 +1,8 @@
 ## Todo
 
 - Mobile support for GNU/Linux
-- Meson build system
-- Debian package (figure out how numbat is used and whether we can reuse numbat from debian repo)
+- Debian package (figure out how numbat is used and whether we can reuse numbat from debian repo) --- most likely done
+- buttons for common fundamental constants (configurable buttons)
 - Close button in about dialog and a proper about dialog (details, report an issue, credits).
 - Better theme, as in https://github.com/htkhiem/euphonica
 - Export and import notebooks (with variables)

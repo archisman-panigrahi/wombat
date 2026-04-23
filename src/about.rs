@@ -1,70 +1,87 @@
-use adw::prelude::*;
+use std::env;
 
-pub fn build_about_page() -> gtk::Box {
-    let page = gtk::Box::new(gtk::Orientation::Vertical, 12);
-    page.set_margin_top(24);
-    page.set_margin_bottom(24);
-    page.set_margin_start(24);
-    page.set_margin_end(24);
+use gtk::prelude::DisplayExtManual;
 
-    let heading = adw::StatusPage::builder()
-        .icon_name("applications-science-symbolic")
-        .title("About Wombat")
-        .description("A mobile-friendly libadwaita front-end for Numbat.")
+const APP_ID: &str = "io.github.archisman_panigrahi.wombat";
+const WEBSITE: &str = "https://github.com/archisman-panigrahi/wombat";
+const ISSUE_TRACKER: &str = "https://github.com/archisman-panigrahi/wombat/issues";
+
+pub fn build_about_dialog(_parent: &adw::ApplicationWindow) -> adw::AboutDialog {
+    let info = debug_info();
+
+    let dialog = adw::AboutDialog::builder()
+        .application_icon(APP_ID)
+        .application_name("Wombat")
+        .developer_name("Archisman Panigrahi")
+        .developers(["Archisman Panigrahi"])
+        .artists(["Gemini AI and Archisman Panigrahi"])
+        .designers(["Archisman Panigrahi"])
+        .comments("A GTK4 shell around Numbat.")
+        .version(env!("CARGO_PKG_VERSION"))
+        .license_type(gtk::License::MitX11)
+        .website(WEBSITE)
+        .issue_url(ISSUE_TRACKER)
+        .copyright("Copyright 2026 Archisman Panigrahi")
+        .debug_info(info)
+        .debug_info_filename("wombat-debug")
         .build();
 
-    let credits_group = adw::PreferencesGroup::builder()
-        .title("Credits")
-        .description("Acknowledgements and upstream projects")
-        .build();
+    dialog.add_credit_section(
+        Some("Thanks"),
+        &[
+            "David Peter",
+            "GitHub Copilot",
+        ],
+    );
 
-    let numbat_row = adw::ActionRow::builder()
-        .title("Numbat")
-        .subtitle("Created by David Peter")
-        .build();
-    let numbat_link = gtk::LinkButton::with_label("https://github.com/sharkdp", "github.com/sharkdp");
-    numbat_row.add_suffix(&numbat_link);
-    numbat_row.set_activatable_widget(Some(&numbat_link));
-    credits_group.add(&numbat_row);
+    dialog.add_link("David Peter", "https://github.com/sharkdp");
+    dialog.add_link("GitHub Copilot", "https://github.com/features/copilot");
 
-    let wombat_row = adw::ActionRow::builder()
-        .title("Wombat")
-        .subtitle("GUI shell built with Rust, GTK4, and libadwaita")
-        .build();
-    credits_group.add(&wombat_row);
+    dialog
+}
 
-    let archisman_row = adw::ActionRow::builder()
-        .title("Archisman Panigrahi")
-        .subtitle("Creator of Wombat")
-        .build();
-    let archisman_link =
-        gtk::LinkButton::with_label("https://github.com/archisman-panigrahi", "github.com/archisman");
-    archisman_row.add_suffix(&archisman_link);
-    archisman_row.set_activatable_widget(Some(&archisman_link));
-    credits_group.add(&archisman_row);
+fn debug_info() -> String {
+    let mut information = String::new();
 
-    let copilot_row = adw::ActionRow::builder()
-        .title("GitHub Copilot")
-        .subtitle("Thanks for development assistance")
-        .build();
-    credits_group.add(&copilot_row);
+    information.push_str(&format!("{APP_ID}: {}\n", env!("CARGO_PKG_VERSION")));
+    information.push_str(&format!(
+        "Profile: {}\n",
+        env::var("PROFILE").unwrap_or_else(|_| "unknown".to_string())
+    ));
 
-    let docs_group = adw::PreferencesGroup::builder()
-        .title("Resources")
-        .description("Learn more")
-        .build();
+    if let Some(backend) = backend() {
+        information.push_str(&format!("Backend: {backend}\n"));
+    }
 
-    let docs_row = adw::ActionRow::builder()
-        .title("Numbat Documentation")
-        .subtitle("numbat.dev/docs")
-        .build();
-    let docs_link = gtk::LinkButton::with_label("https://numbat.dev/docs/", "Open");
-    docs_row.add_suffix(&docs_link);
-    docs_row.set_activatable_widget(Some(&docs_link));
-    docs_group.add(&docs_row);
+    information.push_str("Libraries:\n");
+    information.push_str(&format!(
+        " - GTK: {}.{}.{}\n",
+        gtk::major_version(),
+        gtk::minor_version(),
+        gtk::micro_version()
+    ));
+    information.push_str(&format!(
+        " - Libadwaita: {}.{}.{}\n",
+        adw::major_version(),
+        adw::minor_version(),
+        adw::micro_version()
+    ));
 
-    page.append(&heading);
-    page.append(&credits_group);
-    page.append(&docs_group);
-    page
+    information.push_str("Thanks:\n");
+    information.push_str(" - David Peter (github.com/sharkdp)\n");
+    information.push_str(" - GitHub Copilot\n");
+
+    information
+}
+
+fn backend() -> Option<&'static str> {
+    let display = gtk::gdk::Display::default()?;
+
+    Some(match display.backend() {
+        gtk::gdk::Backend::Wayland => "Wayland",
+        gtk::gdk::Backend::X11 => "X11",
+        gtk::gdk::Backend::Win32 => "Win32",
+        gtk::gdk::Backend::MacOS => "macOS",
+        gtk::gdk::Backend::Broadway => "Broadway",
+    })
 }

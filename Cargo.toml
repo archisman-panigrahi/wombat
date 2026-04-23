@@ -5,6 +5,6 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-adw = { package = "libadwaita", version = "0.9" }
+adw = { package = "libadwaita", version = "0.9", features = ["v1_9"] }
 gtk = { package = "gtk4", version = "0.11" }
 numbat = ">1.11.0"

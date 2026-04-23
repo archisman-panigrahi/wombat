@@ -4,7 +4,7 @@ use std::rc::Rc;
 use adw::prelude::*;
 use gtk::gio;
 
-use crate::about::build_about_page;
+use crate::about::build_about_dialog;
 use crate::output::{append_history, ensure_numbat_tags};
 use crate::session::{NumbatSession, OutputEvent};
 
@@ -33,20 +33,8 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     {
         let window = window.clone();
         show_credits_action.connect_activate(move |_, _| {
-            let credits_window = adw::Window::builder()
-                .title("Credits")
-                .default_width(480)
-                .default_height(560)
-                .transient_for(&window)
-                .modal(true)
-                .build();
-
-            let credits_clamp = adw::Clamp::new();
-            credits_clamp.set_maximum_size(560);
-            credits_clamp.set_tightening_threshold(420);
-            credits_clamp.set_child(Some(&build_about_page()));
-            credits_window.set_content(Some(&credits_clamp));
-            credits_window.present();
+            let about_dialog = build_about_dialog(&window);
+            about_dialog.present(Some(&window));
         });
     }
     window.add_action(&show_credits_action);
