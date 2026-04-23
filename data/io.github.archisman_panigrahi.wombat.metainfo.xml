@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.github.archisman_panigrahi.wombat</id>
   <name>Wombat</name>
-  <summary>GTK and libadwaita interface for Numbat</summary>
+  <summary>Effortless unit conversion for scientific computing</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
   <developer id="io.github.archisman_panigrahi">
@@ -10,8 +10,8 @@
   </developer>
   <description>
     <p>
-      Wombat is a desktop GUI for Numbat with a persistent history view and
-      command/expression input in a libadwaita application shell.
+      Wombat gives Numbat a friendly face. It’s a graphical environment for unit-aware scientific computing where conversions just work—no more juggling factors or second-guessing results.
+      Type expressions naturally, mix units freely, and let Wombat handle the rest. It keeps your calculations consistent, your units correct, and your workflow smooth.
     </p>
   </description>
   <launchable type="desktop-id">io.github.archisman_panigrahi.wombat.desktop</launchable>

@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Wombat
-Comment=GTK/libadwaita front-end for Numbat
+Comment=Effortless unit conversion for scientific computing
 Exec=wombat
 Icon=io.github.archisman_panigrahi.wombat
 Terminal=false
