@@ -1,0 +1,4 @@
+target/debug/wombat usr/bin/
+data/io.github.archisman_panigrahi.wombat.desktop usr/share/applications/
+data/io.github.archisman_panigrahi.wombat.metainfo.xml usr/share/metainfo/
+data/io.github.archisman_panigrahi.wombat.png usr/share/icons/hicolor/512x512/apps/

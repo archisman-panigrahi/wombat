@@ -1,0 +1,5 @@
+wombat (0.1.0-1) noble; urgency=medium
+
+  * Initial Debian packaging.
+
+ -- Archisman Panigrahi <apandada1@gmail.com>  Tue, 22 Apr 2026 00:00:00 +0000
