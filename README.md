@@ -28,7 +28,7 @@ On Debian/Ubuntu, this is usually enough:
 sudo apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev git
 ```
 
-If you are using GNOME Builder, install it first and let it pull the platform dependencies it needs. For Builder/Flatpak, open the Flatpak manifest and use its simple buildsystem; Meson is for native builds.
+If you are using GNOME Builder, install it first and let it pull the platform dependencies it needs. For Builder/Flatpak, open the Flatpak manifest and use its simple buildsystem.
 
 ## Important: Cargo vs System Libraries
 
@@ -36,7 +36,7 @@ Cargo can install Rust crates, but it does not install native C libraries like G
 
 So you have two practical options:
 
-- Native host build (APT packages plus Meson/Cargo)
+- Native host build (APT packages plus Cargo)
 - Flatpak/Builder build (GNOME runtime provides newer GTK/libadwaita)
 
 For Debian packaging, this repository also includes a `debian/` directory that
@@ -44,26 +44,16 @@ builds against the system `librust-numbat-dev` crate when packaged there.
 
 ## Build And Run
 
-Meson is the primary build system.
-
 From the project directory:
 
 ```bash
-meson setup build
-meson compile -C build
-meson install -C build
-```
-
-You can also run the binary directly from the build tree after compilation:
-
-```bash
-./build/wombat
+cargo run
 ```
 
 If you want a release build:
 
 ```bash
-meson compile -C build
+cargo run --release
 ```
 
 ## Test Without GNOME Builder
@@ -76,9 +66,7 @@ If your host has compatible GTK/libadwaita dev packages:
 
 ```bash
 source "$HOME/.cargo/env"
-meson setup build
-meson compile -C build
-./build/wombat
+cargo run
 ```
 
 If build fails with pkg-config errors (missing `gtk4.pc` or `graphene-gobject-1.0.pc`), use Option B.
@@ -150,8 +138,7 @@ Example:
 
 ```bash
 export NUMBAT_MODULES_PATH="$HOME/.config/numbat/modules:/opt/numbat/modules"
-meson compile -C build
-./build/wombat
+cargo run
 ```
 
 ## Notes
@@ -164,8 +151,6 @@ meson compile -C build
 ## Repository Layout
 
 - `Cargo.toml` - Rust package metadata and dependencies
-- `meson.build` - Top-level Meson build definition
-- `build-aux/build-wombat.sh` - Meson helper script that invokes Cargo
 - `debian/` - Debian packaging metadata and build rules
 - `src/main.rs` - GTK window, Numbat session handling, and UI logic
 - `README.md` - Setup and usage notes
