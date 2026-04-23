@@ -28,7 +28,7 @@ On Debian/Ubuntu, this is usually enough:
 sudo apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev git
 ```
 
-If you are using GNOME Builder, install it first and let it pull the platform dependencies it needs. The project opens as a normal Rust cargo project.
+If you are using GNOME Builder, install it first and let it pull the platform dependencies it needs. For Builder/Flatpak, open the Flatpak manifest and use its simple buildsystem; Meson is for native builds.
 
 ## Important: Cargo vs System Libraries
 
@@ -36,21 +36,34 @@ Cargo can install Rust crates, but it does not install native C libraries like G
 
 So you have two practical options:
 
-- Native host build (APT packages)
+- Native host build (APT packages plus Meson/Cargo)
 - Flatpak/Builder build (GNOME runtime provides newer GTK/libadwaita)
 
+For Debian packaging, this repository also includes a `debian/` directory that
+builds against the system `librust-numbat-dev` crate when packaged there.
+
 ## Build And Run
+
+Meson is the primary build system.
 
 From the project directory:
 
 ```bash
-cargo run
+meson setup build
+meson compile -C build
+meson install -C build
+```
+
+You can also run the binary directly from the build tree after compilation:
+
+```bash
+./build/wombat
 ```
 
 If you want a release build:
 
 ```bash
-cargo run --release
+meson compile -C build
 ```
 
 ## Test Without GNOME Builder
@@ -63,7 +76,9 @@ If your host has compatible GTK/libadwaita dev packages:
 
 ```bash
 source "$HOME/.cargo/env"
-cargo run
+meson setup build
+meson compile -C build
+./build/wombat
 ```
 
 If build fails with pkg-config errors (missing `gtk4.pc` or `graphene-gobject-1.0.pc`), use Option B.
@@ -103,7 +118,7 @@ flatpak run io.github.archisman_panigrahi.wombat
 4. Open the Flatpak manifest `io.github.archisman_panigrahi.wombat.Devel.json`.
 5. Build and run from inside Builder.
 
-The manifest uses `org.gnome.Platform` + `org.gnome.Sdk` and a Rust SDK extension, so you can build against the GNOME runtime even if your host APT versions are older.
+The manifest uses `org.gnome.Platform` + `org.gnome.Sdk`, a Rust SDK extension, and a simple buildsystem module that runs Cargo directly. That lets Builder build against the GNOME runtime even if your host APT versions are older.
 
 If needed, install the runtimes manually:
 
@@ -135,7 +150,8 @@ Example:
 
 ```bash
 export NUMBAT_MODULES_PATH="$HOME/.config/numbat/modules:/opt/numbat/modules"
-cargo run
+meson compile -C build
+./build/wombat
 ```
 
 ## Notes
@@ -148,6 +164,9 @@ cargo run
 ## Repository Layout
 
 - `Cargo.toml` - Rust package metadata and dependencies
+- `meson.build` - Top-level Meson build definition
+- `build-aux/build-wombat.sh` - Meson helper script that invokes Cargo
+- `debian/` - Debian packaging metadata and build rules
 - `src/main.rs` - GTK window, Numbat session handling, and UI logic
 - `README.md` - Setup and usage notes
 - `io.github.archisman_panigrahi.wombat.Devel.json` - Flatpak manifest for GNOME Builder / Flatpak builds
