@@ -1,0 +1,10 @@
+[package]
+name = "wombat"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+adw = { package = "libadwaita", version = "0.9" }
+gtk = { package = "gtk4", version = "0.11" }
+numbat = { git = "https://github.com/sharkdp/numbat", package = "numbat" }

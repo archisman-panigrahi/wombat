@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Wombat
+Comment=GTK/libadwaita front-end for Numbat
+Exec=wombat
+Icon=io.github.archisman_panigrahi.wombat
+Terminal=false
+Categories=Utility;Science;Education;
+StartupNotify=true
