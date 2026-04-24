@@ -49,6 +49,31 @@ pub fn append_history(
     history_view.scroll_to_iter(&mut end_iter, 0.0, false, 0.0, 1.0);
 }
 
+pub fn set_startup_message(
+    history_buffer: &gtk::TextBuffer,
+    history_view: &gtk::TextView,
+    banner: &str,
+) {
+    history_buffer.set_text("");
+
+    let mut end_iter = history_buffer.end_iter();
+    history_buffer.insert(&mut end_iter, banner);
+    history_buffer.insert(&mut end_iter, "\n");
+    history_buffer.insert(&mut end_iter, "Wombat v");
+    history_buffer.insert(&mut end_iter, env!("CARGO_PKG_VERSION"));
+    history_buffer.insert(&mut end_iter, " | Numbat v1.23.0");
+    history_buffer.insert(&mut end_iter, "\n\nType ");
+    insert_colored_input(history_buffer, &mut end_iter, "help");
+    history_buffer.insert(&mut end_iter, ", ");
+    insert_colored_input(history_buffer, &mut end_iter, "list");
+    history_buffer.insert(&mut end_iter, ", or ");
+    insert_colored_input(history_buffer, &mut end_iter, "2 m + 30 cm");
+    history_buffer.insert(&mut end_iter, " to get started.\n");
+
+    let mut end_iter = history_buffer.end_iter();
+    history_view.scroll_to_iter(&mut end_iter, 0.0, false, 0.0, 1.0);
+}
+
 fn tag_for_format(format: NumbatFormatType) -> Option<&'static str> {
     match format {
         NumbatFormatType::Whitespace | NumbatFormatType::Text => None,

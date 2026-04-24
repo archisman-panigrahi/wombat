@@ -13,10 +13,10 @@ pub fn build_about_dialog(_parent: &adw::ApplicationWindow) -> adw::AboutDialog 
         .application_icon(APP_ID)
         .application_name("Wombat")
         .developer_name("Archisman Panigrahi")
-        .developers(["Archisman Panigrahi"])
+        .developers(["Archisman Panigrahi https://github.com/archisman-panigrahi"])
         .artists(["Gemini AI and Archisman Panigrahi"])
         .designers(["Archisman Panigrahi"])
-        .comments("A GTK4 shell around Numbat.")
+        .comments("Graphical scientific calculator and unit converter based on Numbat programming language.")
         .version(env!("CARGO_PKG_VERSION"))
         .license_type(gtk::License::MitX11)
         .website(WEBSITE)
@@ -29,13 +29,12 @@ pub fn build_about_dialog(_parent: &adw::ApplicationWindow) -> adw::AboutDialog 
     dialog.add_credit_section(
         Some("Thanks"),
         &[
-            "David Peter",
-            "GitHub Copilot",
+            "David Peter https://github.com/sharkdp",
+            "GitHub Copilot https://github.com/features/copilot",
         ],
     );
 
-    dialog.add_link("David Peter", "https://github.com/sharkdp");
-    dialog.add_link("GitHub Copilot", "https://github.com/features/copilot");
+    dialog.add_link("Numbat", "https://github.com/numbat.dev");
 
     dialog
 }
@@ -68,8 +67,9 @@ fn debug_info() -> String {
     ));
 
     information.push_str("Thanks:\n");
-    information.push_str(" - David Peter (github.com/sharkdp)\n");
-    information.push_str(" - GitHub Copilot\n");
+    information.push_str(" - David Peter: https://github.com/sharkdp\n");
+    information.push_str(" - GitHub Copilot: https://github.com/features/copilot\n");
+    information.push_str(" - Numbat: https://github.com/numbat.dev\n");
 
     information
 }
