@@ -1,7 +1,7 @@
 Source: wombat
 Section: utils
 Priority: optional
-Maintainer: Archisman Panigrahi <archisman@localhost>
+Maintainer: Archisman Panigrahi <apandada1@gmail.com>
 Build-Depends: debhelper-compat (= 13),
  dh-sequence-cargo,
  cargo:native,
@@ -17,7 +17,7 @@ Homepage: https://github.com/archisman-panigrahi/wombat
 Package: wombat
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Description: GTK4 and libadwaita desktop shell around Numbat
+Description: Graphical scientific calculator and unit converter based on Numbat programming language
  Wombat is a desktop front-end for the Numbat language that keeps a live
  interpreter session in memory and shows the full output history in a
  scrollable log.
