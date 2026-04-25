@@ -431,7 +431,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     sidebar_panel.append(&make_sidebar_button("help-faq-symbolic", "Quick Syntax Help", open_numbat_help_action.clone()));
     sidebar_panel.append(&make_sidebar_button(
         "view-list-symbolic",
-        "List of Constants and Functions",
+        "List of Constants",
         open_numbat_list_action.clone(),
     ));
 
