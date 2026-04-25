@@ -15,10 +15,10 @@
     }
   },
   "finish-args": [
-    "--share=network",
-    "--socket=fallback-x11",
+    "--device=dri",
+    "--share=ipc",
     "--socket=wayland",
-    "--device=dri"
+    "--socket=fallback-x11"
   ],
   "modules": [
     {
