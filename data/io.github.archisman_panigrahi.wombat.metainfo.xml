@@ -12,9 +12,14 @@
 
   <description>
     <p>
-      Wombat gives Numbat a friendly face: a high-precision graphical calculator built for scientists and engineers.
-      Designed for unit-aware scientific computing, conversions just work—no need to juggle factors or second-guess results.
-      Type expressions naturally, mix units freely, and let Wombat keep your calculations consistent, your units correct, and your workflow smooth.
+      Wombat is a mobile-friendly and modern graphical interface for Numbat programming language, which is a high-precision scientific calculator with first-class support for physical units and dimensions.
+      It lets you write expressions naturally, combine units safely, and convert results instantly.
+      It knows about nearly all physical units and their dimensions, so you can work with real-world quantities without worrying about unit conversions.
+      Wombat is built for scientists, engineers, students, and anyone who works with real-world quantities.
+    </p>
+    <p>
+      The app keeps a live Numbat session, displays previous calculations in a scrollable history, and provides quick access to examples, syntax help, constants, and completion suggestions.
+      Calculations can mix ordinary mathematics with unit-aware conversions, so results stay dimensionally meaningful while the interface stays friendly.
     </p>
   </description>
 
@@ -28,6 +33,17 @@
   <url type="vcs-browser">https://github.com/archisman-panigrahi/wombat</url>
 
   <releases>
+    <release version="0.4.0" date="2026-04-25">
+      <description>
+        <p>New features and improvements in this release:</p>
+        <ul>
+          <li>Added keyboard-only navigation for the Options panel, including an F10 shortcut and arrow-key movement between option buttons.</li>
+          <li>Added a standard libadwaita Keyboard Shortcuts dialog from the Options panel.</li>
+          <li>Improved completion suggestions so Tab opens suggestions, a second Tab focuses the first suggestion, and Up and Down move between suggestions instead of command history while the popup is open.</li>
+        </ul>
+      </description>
+    </release>
+
     <release version="0.3.0" date="2026-04-25">
       <description>
         <p>New features and improvements in this release:</p>

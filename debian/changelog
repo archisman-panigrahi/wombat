@@ -1,3 +1,12 @@
+wombat (0.4.0-1) noble; urgency=medium
+
+  * Add keyboard-only navigation for the Options panel.
+  * Add app shortcuts and a libadwaita Keyboard Shortcuts dialog.
+  * Improve Tab completion so suggestions can be selected with the keyboard.
+  * Refresh AppStream description and release notes.
+
+ -- Archisman Panigrahi <apandada1@gmail.com>  Sat, 25 Apr 2026 10:37:18 -0400
+
 wombat (0.1.0-1) noble; urgency=medium
 
   * Initial Debian packaging.
