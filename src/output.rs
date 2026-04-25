@@ -30,6 +30,8 @@ pub fn ensure_numbat_tags(history_buffer: &gtk::TextBuffer) {
     if table.lookup("nb-banner").is_none() {
         let tag = gtk::TextTag::builder()
             .name("nb-banner")
+            .family("monospace")
+            .family_set(true)
             .wrap_mode(gtk::WrapMode::None)
             .build();
         table.add(&tag);
