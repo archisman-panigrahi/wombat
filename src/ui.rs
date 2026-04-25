@@ -87,9 +87,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     history_scroller.set_min_content_height(120);
     history_scroller.add_css_class("card");
 
-    let input_label = gtk::Label::new(Some("Expression or command"));
-    input_label.set_halign(gtk::Align::Start);
-
     let input_entry = gtk::Entry::builder()
         .hexpand(true)
         .placeholder_text("Type Numbat code, then press Enter")
@@ -140,10 +137,9 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     status_label.set_wrap(true);
 
     root.append(&history_scroller);
-    root.append(&input_label);
+    root.append(&status_label);
     root.append(&input_row);
     root.append(&constants_row);
-    root.append(&status_label);
 
     let calculator_clamp = adw::Clamp::new();
     calculator_clamp.set_maximum_size(860);
