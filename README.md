@@ -16,7 +16,19 @@ Wombat is a scientific calculator using [Numbat](https://github.com/sharkdp/numb
 
 The module-management GUI itself is intentionally left for a later iteration, but the app is already wired so external module paths can be discovered from the environment and the standard user/system folders.
 
-## Requirements
+## Planned features
+
+See [Planned features](./todo.md).
+
+## How to install?
+
+First, [install flatpak](https://flatpak.org/setup/).
+Then, head over to [GitHub releases](https://github.com/archisman-panigrahi/wombat/releases), and download the prebuilt flatpak. Install it with
+```
+flatpak install /path/to/wombat-version_number.flatpak
+```
+
+## Build Requirements
 
 You need:
 
