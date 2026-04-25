@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wombat – GUI for Numbat</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family: Inter, system-ui, sans-serif;
+  background:#f5f7f4;
+  color:#24322a;
+  line-height:1.6;
+}
+
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:0 1rem;
+}
+
+header{
+  padding:4rem 0 2rem;
+  text-align:center;
+}
+
+h1{
+  font-size:clamp(2.4rem,8vw,4.5rem);
+  font-weight:800;
+  color:#3b5d43;
+}
+
+.tagline{
+  font-size:1.15rem;
+  max-width:700px;
+  margin:1rem auto 0;
+  color:#516457;
+}
+
+.hero{
+  display:flex;
+  justify-content:center;
+  padding:2rem 0 4rem;
+}
+
+.card{
+  width:100%;
+  max-width:820px;
+}
+
+.card h2{
+  font-size:2rem;
+  margin-bottom:1rem;
+  color:#2e4935;
+}
+
+.card p{
+  margin-bottom:1rem;
+  color:#4d6053;
+}
+
+.features{
+  display:grid;
+  gap:0.8rem;
+  margin:1.5rem 0;
+}
+
+.feature{
+  background:#eef5ee;
+  padding:0.9rem 1rem;
+  border-radius:14px;
+}
+
+a{
+  color:#254b2c;
+}
+
+a.button{
+  display:inline-block;
+  text-decoration:none;
+  background:#5d8a66;
+  color:white;
+  padding:0.95rem 1.4rem;
+  border-radius:999px;
+  font-weight:600;
+}
+
+a.button:hover{
+  background:#4f7757;
+}
+
+.screenshot{
+  /* background:white; */
+  padding:1rem;
+  /* border-radius:24px; */
+  /* box-shadow:0 12px 40px rgba(0,0,0,0.06); */
+
+  max-width:420px;   /* controls size */
+  margin:1.5rem auto; /* centers horizontally */
+}
+
+.screenshot img{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:16px;
+}
+
+.logo{
+  text-align:center;
+  margin:1rem 0;
+}
+
+.logo img{
+  width:20%;
+  min-width:90px;
+  max-width:160px;
+  height:auto;
+}
+
+
+footer{
+  text-align:center;
+  padding:2rem 1rem 3rem;
+  color:#6a7b6d;
+}
+
+@media (max-width: 860px){
+  .hero{
+    grid-template-columns:1fr;
+  }
+
+  header{
+    padding-top:2.5rem;
+  }
+
+  .card h2{
+    font-size:1.6rem;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h1>Wombat</h1>
+  <div class="logo">
+    <img src="https://raw.githubusercontent.com/archisman-panigrahi/wombat/main/data/io.github.archisman_panigrahi.wombat.png" alt="Wombat Screenshot" width="20%">
+  </div>
+  <p class="tagline">
+    A modern graphical interface for the <strong>Numbat programming language</strong> —
+    scientific computing with first-class units, dimensions, and effortless conversions.
+    <a href="https://github.com/archisman-panigrahi/wombat/tree/main#how-to-install">Available on GNU/Linux.</a>
+  </p>
+</header>
+
+<section class="hero">
+
+  <div class="card">
+    <!-- <h2>Built on Numbat</h2> -->
+
+    <p>
+      Wombat brings the power of <strong><a href="https://numbat.dev">Numbat</a></strong> to a friendly desktop interface.
+      Use the precision of a unit-aware programming language without needing a terminal.
+    </p>
+    <div class="screenshot">
+    <img src="https://raw.githubusercontent.com/archisman-panigrahi/wombat/main/screenshot/wombat.png" alt="Wombat Screenshot">
+    </div>
+
+    <p>
+      Write expressions naturally, combine units safely, and convert results instantly.
+      Ideal for scientists, engineers, students, and anyone who works with real-world quantities.
+    </p>
+
+    <div class="features">
+      <div class="feature">⚡ Instant unit conversion powered by the Numbat language</div>
+      <div class="feature">📐 Dimensionally correct calculations</div>
+      <!-- <div class="feature">🧮 Powered by the Numbat language</div> -->
+      <!-- <div class="feature">📱 Responsive and mobile friendly</div> -->
+    </div>
+
+    <a class="button" href="https://github.com/archisman-panigrahi/wombat">
+      View on GitHub
+    </a>
+  </div>
+
+</section>
+
+<footer>
+Wombat is an open source GUI built around Numbat — unit-aware scientific computing made accessible.
+</footer>
+
+</div>
+
+</body>
+</html>
