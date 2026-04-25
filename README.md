@@ -27,6 +27,7 @@ Then, head over to [GitHub releases](https://github.com/archisman-panigrahi/womb
 ```
 flatpak install /path/to/wombat-version_number.flatpak
 ```
+[Flathub](https://flathub.org/) version coming soon for hassle-free installation.
 
 ## Build Requirements
 
