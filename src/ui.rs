@@ -72,12 +72,29 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     window.add_action(&open_examples_action);
 
     let menu = gio::Menu::new();
-    menu.append(Some("About"), Some("win.show-credits"));
-    menu.append(Some("View Numbat Syntax"), Some("win.open-numbat-syntax"));
-    menu.append(Some("Examples"), Some("win.open-examples"));
-    menu.append(Some("Reset Session"), Some("win.reset-session"));
-    menu.append(Some("Clear Inputs"), Some("win.clear-history"));
-    menu.append(Some("Quit"), Some("app.quit"));
+
+    let about_section = gio::Menu::new();
+    about_section.append(Some("About"), Some("win.show-credits"));
+    menu.append_section(None, &about_section);
+
+    let quick_help_section = gio::Menu::new();
+    quick_help_section.append(Some("Quick Syntax Help"), Some("win.open-numbat-help"));
+    quick_help_section.append(Some("List of Constants and Functions"), Some("win.open-numbat-list"));
+    menu.append_section(None, &quick_help_section);
+
+    let online_docs_section = gio::Menu::new();
+    online_docs_section.append(Some("Detailed Numbat Syntax online"), Some("win.open-numbat-syntax"));
+    online_docs_section.append(Some("Online Examples"), Some("win.open-examples"));
+    menu.append_section(None, &online_docs_section);
+
+    let session_section = gio::Menu::new();
+    session_section.append(Some("Reset Session"), Some("win.reset-session"));
+    session_section.append(Some("Clear Inputs"), Some("win.clear-history"));
+    menu.append_section(None, &session_section);
+
+    let quit_section = gio::Menu::new();
+    quit_section.append(Some("Quit"), Some("app.quit"));
+    menu.append_section(None, &quit_section);
 
     let menu_button = gtk::MenuButton::builder()
         .icon_name("open-menu-symbolic")
@@ -263,19 +280,17 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
     window.add_action(&clear_history_action);
 
-    let submit = Rc::new({
+    let submit_input = Rc::new({
         let session = Rc::clone(&session);
         let command_history = Rc::clone(&command_history);
         let history_cursor = Rc::clone(&history_cursor);
         let draft_input = Rc::clone(&draft_input);
         let history_buffer = history_buffer.clone();
         let history_view = history_view.clone();
-        let input_entry = input_entry.clone();
         let status_label = status_label.clone();
         let toast_overlay = toast_overlay.clone();
         let app = app.clone();
-        move || {
-            let input = input_entry.text().to_string();
+        move |input: String| {
             let trimmed = input.trim().to_string();
             if trimmed.is_empty() {
                 status_label.set_text("Type a Numbat expression or command first.");
@@ -293,7 +308,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
             let outcome = session.borrow_mut().handle_input(&trimmed);
             append_history(&history_buffer, &history_view, &trimmed, &outcome.output);
-            input_entry.set_text("");
 
             if outcome.clear_history {
                 history_buffer.set_text("");
@@ -316,6 +330,34 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             }
         }
     });
+
+    let open_numbat_help_action = gio::SimpleAction::new("open-numbat-help", None);
+    {
+        let submit_input = Rc::clone(&submit_input);
+        open_numbat_help_action.connect_activate(move |_, _| {
+            submit_input(String::from("help"));
+        });
+    }
+    window.add_action(&open_numbat_help_action);
+
+    let open_numbat_list_action = gio::SimpleAction::new("open-numbat-list", None);
+    {
+        let submit_input = Rc::clone(&submit_input);
+        open_numbat_list_action.connect_activate(move |_, _| {
+            submit_input(String::from("list"));
+        });
+    }
+    window.add_action(&open_numbat_list_action);
+
+    let submit = {
+        let submit_input = Rc::clone(&submit_input);
+        let input_entry = input_entry.clone();
+        Rc::new(move || {
+            let input = input_entry.text().to_string();
+            submit_input(input);
+            input_entry.set_text("");
+        })
+    };
 
     {
         let submit = Rc::clone(&submit);

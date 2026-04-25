@@ -63,13 +63,10 @@ pub fn set_startup_message(
     history_buffer.insert(&mut end_iter, env!("CARGO_PKG_VERSION"));
     history_buffer.insert(&mut end_iter, ", powered by Numbat v");
     history_buffer.insert(&mut end_iter, env!("NUMBAT_VERSION"));
-    history_buffer.insert(&mut end_iter, "\n\nType ");
-    insert_colored_input(history_buffer, &mut end_iter, "help");
-    history_buffer.insert(&mut end_iter, ", ");
-    insert_colored_input(history_buffer, &mut end_iter, "list");
-    history_buffer.insert(&mut end_iter, ", or ");
-    insert_colored_input(history_buffer, &mut end_iter, "2 m + 30 cm");
-    history_buffer.insert(&mut end_iter, " to get started.\n");
+    history_buffer.insert(&mut end_iter, "\n\nType something like ");
+    insert_colored_input(history_buffer, &mut end_iter, "\"2 m + 30 inch to cm\"");
+    history_buffer.insert(&mut end_iter, " to get started.");
+    history_buffer.insert(&mut end_iter, "\nOr check out \"Quick Syntax Help\" in the menu\n");
 
     let mut end_iter = history_buffer.end_iter();
     history_view.scroll_to_iter(&mut end_iter, 0.0, false, 0.0, 1.0);
