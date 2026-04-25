@@ -77,6 +77,12 @@
     </release>
   </releases>
 
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+
   <branding>
     <color type="primary" scheme_preference="light">#f6d2d2</color>
     <color type="primary" scheme_preference="dark">#77767b</color>
