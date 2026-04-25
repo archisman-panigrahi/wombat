@@ -685,7 +685,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     set_startup_message(&history_buffer, &history_view, STARTUP_BANNER);
 
     overlay_split_view.set_content(Some(&calculator_clamp));
-    overlay_split_view.set_show_sidebar(true);
+    overlay_split_view.set_show_sidebar(false);
 
     let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
     shell.append(&header);
