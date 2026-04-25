@@ -157,13 +157,6 @@ export NUMBAT_MODULES_PATH="$HOME/.config/numbat/modules:/opt/numbat/modules"
 cargo run
 ```
 
-## Notes
-
-- The current input widget is a single-line entry. It is enough for most expressions and REPL commands, and can be upgraded to a multi-line editor later.
-- A future pass can add an in-app module picker/editor panel for creating and managing custom `.nbt` files.
-- If you want the same interpreter behavior as the Numbat CLI, keep this project synced with upstream Numbat API changes.
-- The APT fallback can still work if your distro GTK/libadwaita versions satisfy the bindings in `Cargo.toml`.
-
 ## Repository Layout
 
 - `Cargo.toml` - Rust package metadata and dependencies
