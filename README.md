@@ -22,12 +22,21 @@ See [Planned features](./todo.md).
 
 ## How to install?
 
-First, [install flatpak](https://flatpak.org/setup/).
-Then, head over to [GitHub releases](https://github.com/archisman-panigrahi/wombat/releases), and download the prebuilt flatpak. Install it with
+
+### Arch Linux
+
+Available on the [AUR](https://aur.archlinux.org/packages/wombat):
 ```
-flatpak install /path/to/wombat-version_number.flatpak
+yay -S wombat
 ```
-[Flathub](https://flathub.org/) version coming soon for hassle-free installation.
+
+### Other distros
+
+<a href='https://flathub.org/apps/io.github.archisman_panigrahi.wombat'>
+    <img height='55' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
+</a>
+
+Here is [how to set up Flathub](https://flathub.org/en/setup) on your distro so that you can install this app.
 
 ## Build Requirements
 
