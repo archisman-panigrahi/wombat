@@ -4,7 +4,7 @@
 
 Wombat is a scientific calculator using [Numbat](https://github.com/sharkdp/numbat) programming language. It keeps a live Numbat interpreter session in memory and shows the full output history in a scrollable log. It uses GTK4+libadwaita.
 
-![wombat](screenshot/wombat.png)
+![wombat](data/screenshots/wombat.png)
 
 ## What Works Now
 

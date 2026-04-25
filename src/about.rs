@@ -3,7 +3,7 @@ use std::env;
 // use gtk::prelude::DisplayExtManual;
 
 const APP_ID: &str = "io.github.archisman_panigrahi.wombat";
-const WEBSITE: &str = "https://github.com/archisman-panigrahi/wombat";
+const WEBSITE: &str = "https://archisman-panigrahi.github.io/wombat/";
 const ISSUE_TRACKER: &str = "https://github.com/archisman-panigrahi/wombat/issues";
 
 pub fn build_about_dialog(_parent: &adw::ApplicationWindow) -> adw::AboutDialog {

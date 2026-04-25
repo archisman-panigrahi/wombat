@@ -12,7 +12,7 @@ Build-Depends: debhelper-compat (= 13),
  librust-numbat-dev (>= 1.11.0)
 Standards-Version: 4.7.0
 Rules-Requires-Root: no
-Homepage: https://github.com/archisman-panigrahi/wombat
+Homepage: https://archisman-panigrahi.github.io/wombat/
 
 Package: wombat
 Architecture: any

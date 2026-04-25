@@ -19,9 +19,15 @@
   <provides>
     <binary>wombat</binary>
   </provides>
-  <url type="homepage">https://github.com/sharkdp/numbat</url>
+  <url type="homepage">https://archisman-panigrahi.github.io/wombat/</url>
+  <url type="vcs-browser">https://github.com/archisman-panigrahi/wombat</url>
   <releases>
     <release version="0.1.0" date="2026-04-22" />
   </releases>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/main/data/screenshots/wombat.png</image>
+    </screenshot>
+  </screenshots>
   <content_rating type="oars-1.1" />
 </component>
