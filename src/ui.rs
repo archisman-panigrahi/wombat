@@ -135,19 +135,44 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .placeholder_text("Type Numbat code, then press Enter")
         .build();
 
+    let completion_panel = gtk::Revealer::builder()
+        .transition_type(gtk::RevealerTransitionType::SlideDown)
+        .reveal_child(false)
+        .build();
+    let completion_list = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    completion_list.set_margin_top(6);
+    completion_list.set_margin_bottom(6);
+    completion_list.set_margin_start(6);
+    completion_list.set_margin_end(6);
+    let completion_scroller = gtk::ScrolledWindow::builder()
+        .min_content_height(96)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .vscrollbar_policy(gtk::PolicyType::Automatic)
+        .child(&completion_list)
+        .build();
+    completion_scroller.add_css_class("card");
+    completion_panel.set_child(Some(&completion_scroller));
+
     let run_button = gtk::Button::with_label("Run");
     run_button.add_css_class("suggested-action");
+
+    let suggestions_button = gtk::Button::with_label("Suggestions");
+    suggestions_button.set_sensitive(false);
 
     let input_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     input_row.set_margin_top(INPUT_MARGIN);
     input_row.append(&input_entry);
+    input_row.append(&suggestions_button);
     input_row.append(&run_button);
 
     // Physics constants buttons
-    let constants_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    let constants_row = gtk::FlowBox::new();
     constants_row.set_margin_top(8);
     constants_row.set_margin_bottom(8);
     constants_row.set_halign(gtk::Align::Center);
+    constants_row.set_valign(gtk::Align::Start);
+    constants_row.set_max_children_per_line(8);
+    constants_row.set_selection_mode(gtk::SelectionMode::None);
     
     let constants: &[(&str, &str)] = &[
         ("ℏ", "h_bar"),
@@ -170,7 +195,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             let separator = if current.is_empty() { "" } else { " " };
             entry_clone.set_text(&format!("{}{}{}", current, separator, const_name));
         });
-        constants_row.append(&btn);
+        constants_row.insert(&btn, -1);
     }
 
     let status_label = gtk::Label::new(Some(
@@ -182,6 +207,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     root.append(&history_scroller);
     root.append(&status_label);
     root.append(&input_row);
+    root.append(&completion_panel);
     root.append(&constants_row);
 
     let calculator_clamp = adw::Clamp::new();
@@ -352,7 +378,9 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     let submit = {
         let submit_input = Rc::clone(&submit_input);
         let input_entry = input_entry.clone();
+        let completion_panel = completion_panel.clone();
         Rc::new(move || {
+            completion_panel.set_reveal_child(false);
             let input = input_entry.text().to_string();
             submit_input(input);
             input_entry.set_text("");
@@ -370,14 +398,109 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
 
     {
+        let suggestions_button = suggestions_button.clone();
+        let completion_panel = completion_panel.clone();
+        let completion_list = completion_list.clone();
+        input_entry.connect_changed(move |entry| {
+            let has_input = !entry.text().trim().is_empty();
+            suggestions_button.set_sensitive(has_input);
+
+            if !has_input {
+                while let Some(child) = completion_list.first_child() {
+                    completion_list.remove(&child);
+                }
+                completion_panel.set_reveal_child(false);
+            }
+        });
+    }
+
+    let show_completions = {
+        let session = Rc::clone(&session);
+        let input_entry = input_entry.clone();
+        let completion_panel = completion_panel.clone();
+        let completion_list = completion_list.clone();
+        Rc::new(move || {
+            while let Some(child) = completion_list.first_child() {
+                completion_list.remove(&child);
+            }
+
+            let input = input_entry.text();
+            let cursor = input_entry.position().max(0) as usize;
+            let cursor = input
+                .char_indices()
+                .nth(cursor)
+                .map(|(index, _)| index)
+                .unwrap_or_else(|| input.len());
+
+            let prefix_start = completion_prefix_start(&input, cursor);
+
+            if prefix_start >= cursor {
+                completion_panel.set_reveal_child(false);
+                return;
+            }
+
+            let prefix = input[prefix_start..cursor].to_string();
+            let suggestions = session.borrow().completions_for(&prefix);
+
+            if suggestions.is_empty() {
+                completion_panel.set_reveal_child(false);
+                return;
+            }
+
+            for suggestion in suggestions.into_iter() {
+                let button = gtk::Button::with_label(&suggestion);
+                button.set_halign(gtk::Align::Fill);
+                button.set_hexpand(true);
+                button.add_css_class("flat");
+
+                let input_entry = input_entry.clone();
+                let completion_panel = completion_panel.clone();
+                let suggestion = suggestion.clone();
+                button.connect_clicked(move |_| {
+                    let mut text = input_entry.text().to_string();
+                    let cursor = input_entry.position().max(0) as usize;
+                    let cursor = text
+                        .char_indices()
+                        .nth(cursor)
+                        .map(|(index, _)| index)
+                        .unwrap_or_else(|| text.len());
+
+                    let prefix_start = completion_prefix_start(&text, cursor);
+
+                    text.replace_range(prefix_start..cursor, &suggestion);
+                    input_entry.set_text(&text);
+                    input_entry.set_position(-1);
+                    completion_panel.set_reveal_child(false);
+                });
+
+                completion_list.append(&button);
+            }
+
+            completion_panel.set_reveal_child(true);
+        })
+    };
+
+    {
+        let show_completions = Rc::clone(&show_completions);
+        suggestions_button.connect_clicked(move |_| show_completions());
+    }
+
+    {
         let command_history = Rc::clone(&command_history);
         let history_cursor = Rc::clone(&history_cursor);
         let draft_input = Rc::clone(&draft_input);
         let input_entry_for_keys = input_entry.clone();
+        let completion_panel = completion_panel.clone();
+        let show_completions = Rc::clone(&show_completions);
         let key_controller = gtk::EventControllerKey::new();
         key_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
         key_controller.connect_key_pressed(move |_, key, _, _| match key {
+            gtk::gdk::Key::Tab => {
+                show_completions();
+                gtk::glib::Propagation::Stop
+            }
             gtk::gdk::Key::Up => {
+                completion_panel.set_reveal_child(false);
                 let history = command_history.borrow();
                 if history.is_empty() {
                     return gtk::glib::Propagation::Stop;
@@ -397,6 +520,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 gtk::glib::Propagation::Stop
             }
             gtk::gdk::Key::Down => {
+                completion_panel.set_reveal_child(false);
                 let history = command_history.borrow();
                 if history.is_empty() {
                     return gtk::glib::Propagation::Stop;
@@ -420,7 +544,10 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
                 gtk::glib::Propagation::Stop
             }
-            _ => gtk::glib::Propagation::Proceed,
+            _ => {
+                completion_panel.set_reveal_child(false);
+                gtk::glib::Propagation::Proceed
+            }
         });
         input_entry.add_controller(key_controller);
     }
@@ -428,4 +555,18 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     set_startup_message(&history_buffer, &history_view, STARTUP_BANNER);
 
     window
+}
+
+fn completion_prefix_start(text: &str, cursor: usize) -> usize {
+    let mut prefix_start = cursor;
+
+    for (index, ch) in text[..cursor].char_indices().rev() {
+        if ch.is_alphanumeric() || ch == '_' {
+            prefix_start = index;
+        } else {
+            break;
+        }
+    }
+
+    prefix_start
 }
