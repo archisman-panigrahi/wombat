@@ -1,6 +1,6 @@
 # Wombat
 
-Wombat is a GTK4 + libadwaita desktop shell around [Numbat](https://github.com/sharkdp/numbat). It keeps a live Numbat interpreter session in memory and shows the full output history in a scrollable log.
+Wombat is a scientific calculator using [Numbat](https://github.com/sharkdp/numbat) programming language. It keeps a live Numbat interpreter session in memory and shows the full output history in a scrollable log. It uses GTK4+libadwaita.
 
 ## What Works Now
 
