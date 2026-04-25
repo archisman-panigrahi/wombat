@@ -39,6 +39,43 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     title.add_css_class("title-3");
     header.set_title_widget(Some(&title));
 
+    let overlay_split_view = adw::OverlaySplitView::new();
+    overlay_split_view.set_enable_show_gesture(true);
+    overlay_split_view.set_enable_hide_gesture(true);
+    overlay_split_view.set_pin_sidebar(true);
+    overlay_split_view.set_sidebar_position(gtk::PackType::End);
+    overlay_split_view.set_min_sidebar_width(240.0);
+    overlay_split_view.set_max_sidebar_width(320.0);
+    let toast_overlay = adw::ToastOverlay::new();
+
+    let sidebar_toggle_button = gtk::Button::with_label("Options");
+    {
+        let overlay_split_view = overlay_split_view.clone();
+        sidebar_toggle_button.connect_clicked(move |_| {
+            overlay_split_view.set_show_sidebar(!overlay_split_view.shows_sidebar());
+        });
+    }
+    header.pack_end(&sidebar_toggle_button);
+
+    let update_sidebar_toggle_label = {
+        let sidebar_toggle_button = sidebar_toggle_button.clone();
+        let overlay_split_view = overlay_split_view.clone();
+        Rc::new(move || {
+            if overlay_split_view.shows_sidebar() {
+                sidebar_toggle_button.set_label("Hide Options");
+            } else {
+                sidebar_toggle_button.set_label("Options");
+            }
+        })
+    };
+    update_sidebar_toggle_label();
+    {
+        let update_sidebar_toggle_label = Rc::clone(&update_sidebar_toggle_label);
+        overlay_split_view.connect_show_sidebar_notify(move |_| {
+            update_sidebar_toggle_label();
+        });
+    }
+
     let show_credits_action = gio::SimpleAction::new("show-credits", None);
     {
         let window = window.clone();
@@ -70,37 +107,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         }
     });
     window.add_action(&open_examples_action);
-
-    let menu = gio::Menu::new();
-
-    let about_section = gio::Menu::new();
-    about_section.append(Some("About"), Some("win.show-credits"));
-    menu.append_section(None, &about_section);
-
-    let quick_help_section = gio::Menu::new();
-    quick_help_section.append(Some("Quick Syntax Help"), Some("win.open-numbat-help"));
-    quick_help_section.append(Some("List of Constants and Functions"), Some("win.open-numbat-list"));
-    menu.append_section(None, &quick_help_section);
-
-    let online_docs_section = gio::Menu::new();
-    online_docs_section.append(Some("Detailed Numbat Syntax online"), Some("win.open-numbat-syntax"));
-    online_docs_section.append(Some("Online Examples"), Some("win.open-examples"));
-    menu.append_section(None, &online_docs_section);
-
-    let session_section = gio::Menu::new();
-    session_section.append(Some("Reset Session"), Some("win.reset-session"));
-    session_section.append(Some("Clear Inputs"), Some("win.clear-history"));
-    menu.append_section(None, &session_section);
-
-    let quit_section = gio::Menu::new();
-    quit_section.append(Some("Quit"), Some("app.quit"));
-    menu.append_section(None, &quit_section);
-
-    let menu_button = gtk::MenuButton::builder()
-        .icon_name("open-menu-symbolic")
-        .menu_model(&menu)
-        .build();
-    header.pack_end(&menu_button);
 
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
     root.set_margin_top(HISTORY_MARGIN);
@@ -214,14 +220,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     calculator_clamp.set_maximum_size(860);
     calculator_clamp.set_tightening_threshold(520);
     calculator_clamp.set_child(Some(&root));
-
-    let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    shell.append(&header);
-    shell.append(&calculator_clamp);
-
-    let toast_overlay = adw::ToastOverlay::new();
-    toast_overlay.set_child(Some(&shell));
-    window.set_content(Some(&toast_overlay));
 
     // Now add the reset and clear actions after history_buffer is created
     let reset_session_action = gio::SimpleAction::new("reset-session", None);
@@ -374,6 +372,138 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         });
     }
     window.add_action(&open_numbat_list_action);
+
+    let make_sidebar_button = |label: &str, action: gio::SimpleAction| {
+        let button = gtk::Button::with_label(label);
+        button.set_hexpand(true);
+        button.set_halign(gtk::Align::Fill);
+        button.add_css_class("flat");
+
+        let overlay_split_view = overlay_split_view.clone();
+        button.connect_clicked(move |_| {
+            action.activate(None);
+            if overlay_split_view.is_collapsed() {
+                overlay_split_view.set_show_sidebar(false);
+            }
+        });
+
+        button
+    };
+
+    let sidebar_panel = gtk::Box::new(gtk::Orientation::Vertical, 10);
+    sidebar_panel.set_margin_top(12);
+    sidebar_panel.set_margin_bottom(12);
+    sidebar_panel.set_margin_start(12);
+    sidebar_panel.set_margin_end(12);
+
+    let sidebar_header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let sidebar_title = gtk::Label::new(Some("Actions"));
+    sidebar_title.add_css_class("title-4");
+    sidebar_title.set_halign(gtk::Align::Start);
+    sidebar_title.set_hexpand(true);
+    sidebar_header.append(&sidebar_title);
+
+    let close_sidebar_button = gtk::Button::with_label("Close");
+    close_sidebar_button.add_css_class("flat");
+    {
+        let overlay_split_view = overlay_split_view.clone();
+        close_sidebar_button.connect_clicked(move |_| {
+            overlay_split_view.set_show_sidebar(false);
+        });
+    }
+    sidebar_header.append(&close_sidebar_button);
+    sidebar_panel.append(&sidebar_header);
+
+    let quick_help_label = gtk::Label::new(Some("Quick help"));
+    quick_help_label.add_css_class("heading");
+    quick_help_label.set_halign(gtk::Align::Start);
+    sidebar_panel.append(&quick_help_label);
+    sidebar_panel.append(&make_sidebar_button("Quick Syntax Help", open_numbat_help_action.clone()));
+    sidebar_panel.append(&make_sidebar_button(
+        "List of Constants and Functions",
+        open_numbat_list_action.clone(),
+    ));
+
+    let docs_separator = gtk::Separator::new(gtk::Orientation::Horizontal);
+    sidebar_panel.append(&docs_separator);
+
+    let docs_label = gtk::Label::new(Some("Online docs"));
+    docs_label.add_css_class("heading");
+    docs_label.set_halign(gtk::Align::Start);
+    sidebar_panel.append(&docs_label);
+    sidebar_panel.append(&make_sidebar_button(
+        "Detailed Numbat Syntax",
+        open_numbat_syntax_action.clone(),
+    ));
+    sidebar_panel.append(&make_sidebar_button("Online Examples", open_examples_action.clone()));
+
+    let session_separator = gtk::Separator::new(gtk::Orientation::Horizontal);
+    sidebar_panel.append(&session_separator);
+
+    let session_label = gtk::Label::new(Some("Session"));
+    session_label.add_css_class("heading");
+    session_label.set_halign(gtk::Align::Start);
+    sidebar_panel.append(&session_label);
+    sidebar_panel.append(&make_sidebar_button("Reset Session", reset_session_action.clone()));
+    sidebar_panel.append(&make_sidebar_button("Clear Inputs", clear_history_action.clone()));
+
+    let app_separator = gtk::Separator::new(gtk::Orientation::Horizontal);
+    sidebar_panel.append(&app_separator);
+
+    let app_label = gtk::Label::new(Some("App"));
+    app_label.add_css_class("heading");
+    app_label.set_halign(gtk::Align::Start);
+    sidebar_panel.append(&app_label);
+    sidebar_panel.append(&make_sidebar_button("About", show_credits_action.clone()));
+    {
+        let button = gtk::Button::with_label("Fullscreen");
+        button.set_hexpand(true);
+        button.set_halign(gtk::Align::Fill);
+        button.add_css_class("flat");
+
+        let window = window.clone();
+        let overlay_split_view = overlay_split_view.clone();
+        button.connect_clicked(move |_| {
+            if window.is_fullscreen() {
+                window.unfullscreen();
+            } else {
+                window.fullscreen();
+            }
+
+            if overlay_split_view.is_collapsed() {
+                overlay_split_view.set_show_sidebar(false);
+            }
+        });
+
+        sidebar_panel.append(&button);
+    }
+    {
+        let button = gtk::Button::with_label("Quit");
+        button.set_hexpand(true);
+        button.set_halign(gtk::Align::Fill);
+        button.add_css_class("flat");
+
+        let app = app.clone();
+        let overlay_split_view = overlay_split_view.clone();
+        button.connect_clicked(move |_| {
+            app.quit();
+            if overlay_split_view.is_collapsed() {
+                overlay_split_view.set_show_sidebar(false);
+            }
+        });
+
+        sidebar_panel.append(&button);
+    }
+
+    let sidebar_scroller = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .vscrollbar_policy(gtk::PolicyType::Automatic)
+        .min_content_width(240)
+        .child(&sidebar_panel)
+        .build();
+    sidebar_scroller.add_css_class("card");
+
+    overlay_split_view.set_sidebar(Some(&sidebar_scroller));
 
     let submit = {
         let submit_input = Rc::clone(&submit_input);
@@ -553,6 +683,16 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
 
     set_startup_message(&history_buffer, &history_view, STARTUP_BANNER);
+
+    overlay_split_view.set_content(Some(&calculator_clamp));
+    overlay_split_view.set_show_sidebar(true);
+
+    let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    shell.append(&header);
+    shell.append(&overlay_split_view);
+
+    toast_overlay.set_child(Some(&shell));
+    window.set_content(Some(&toast_overlay));
 
     window
 }
