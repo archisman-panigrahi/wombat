@@ -118,6 +118,18 @@ a.button:hover{
   background:#4f7757;
 }
 
+.download-links{
+  display:flex;
+  flex-wrap:wrap;
+  gap:0.75rem;
+  margin-top:0.5rem;
+  margin-bottom:0.75rem;
+}
+
+.download-links a.button{
+  margin-top:0;
+}
+
 .license{
   margin-top:0.8rem;
   color:#6a7b6d;
@@ -177,7 +189,7 @@ a.button:hover{
     </p>
 
     <p>
-      Wombat brings the power of <strong><a href="https://numbat.dev">Numbat</a></strong>
+      Wombat brings the power of <strong><a href="https://github.com/sharkdp/numbat">Numbat</a></strong>
       to a friendly desktop interface—no terminal required.
     </p>
 
@@ -187,8 +199,18 @@ a.button:hover{
       <div class="feature">🧮 Built for scientists and engineers</div>
     </div>
 
-    <a class="button" href="https://github.com/archisman-panigrahi/wombat">
-      View on GitHub
+    <div class="download-links">
+      <a class="button" href="https://github.com/archisman-panigrahi/wombat">
+        View on GitHub
+      </a>
+
+      <a href="https://aur.archlinux.org/packages/wombat" class="button">
+        AUR Package
+      </a>
+    </div>
+
+    <a href='https://flathub.org/apps/io.github.archisman_panigrahi.wombat'>
+      <img height='55' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
     </a>
 
     <div class="license">
