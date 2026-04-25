@@ -26,11 +26,14 @@ See [Planned features](./todo.md).
 ### Arch Linux
 
 Available on the [AUR](https://aur.archlinux.org/packages/wombat):
+
 ```
 yay -S wombat
 ```
 
 ### Other distros
+
+Published on the Flathub app store:
 
 <a href='https://flathub.org/apps/io.github.archisman_panigrahi.wombat'>
     <img height='55' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
