@@ -80,13 +80,13 @@ If build fails with pkg-config errors (missing `gtk4.pc` or `graphene-gobject-1.
 Install runtimes once:
 
 ```bash
-flatpak install flathub org.gnome.Platform//47 org.gnome.Sdk//47 org.freedesktop.Sdk.Extension.rust-stable//24.08
+flatpak install flathub org.gnome.Platform//50 org.gnome.Sdk//50 org.freedesktop.Sdk.Extension.rust-stable//25.08
 ```
 
 Build and install locally:
 
 ```bash
-flatpak-builder --user --install --force-clean .flatpak-build io.github.archisman_panigrahi.wombat.Devel.json
+flatpak-builder --user --install --force-clean .flatpak-build io.github.archisman_panigrahi.wombat.json
 ```
 
 Run it:
@@ -98,7 +98,7 @@ flatpak run io.github.archisman_panigrahi.wombat
 If you modify code and want a rebuild:
 
 ```bash
-flatpak-builder --user --install --force-clean .flatpak-build io.github.archisman_panigrahi.wombat.Devel.json
+flatpak-builder --user --install --force-clean .flatpak-build io.github.archisman_panigrahi.wombat.json
 flatpak run io.github.archisman_panigrahi.wombat
 ```
 
@@ -107,7 +107,7 @@ flatpak run io.github.archisman_panigrahi.wombat
 1. Open GNOME Builder.
 2. Choose Open Project.
 3. Select this folder.
-4. Open the Flatpak manifest `io.github.archisman_panigrahi.wombat.Devel.json`.
+4. Open the Flatpak manifest `io.github.archisman_panigrahi.wombat.json`.
 5. Build and run from inside Builder.
 
 The manifest uses `org.gnome.Platform` + `org.gnome.Sdk`, a Rust SDK extension, and a simple buildsystem module that runs Cargo directly. That lets Builder build against the GNOME runtime even if your host APT versions are older.
@@ -115,13 +115,13 @@ The manifest uses `org.gnome.Platform` + `org.gnome.Sdk`, a Rust SDK extension, 
 If needed, install the runtimes manually:
 
 ```bash
-flatpak install flathub org.gnome.Platform//47 org.gnome.Sdk//47 org.freedesktop.Sdk.Extension.rust-stable//24.08
+flatpak install flathub org.gnome.Platform//50 org.gnome.Sdk//50 org.freedesktop.Sdk.Extension.rust-stable//25.08
 ```
 
 You can also build from terminal with Flatpak tools:
 
 ```bash
-flatpak-builder --user --install --force-clean .flatpak-build io.github.archisman_panigrahi.wombat.Devel.json
+flatpak-builder --user --install --force-clean .flatpak-build io.github.archisman_panigrahi.wombat.json
 flatpak run io.github.archisman_panigrahi.wombat
 ```
 
@@ -158,7 +158,7 @@ cargo run
 - `debian/` - Debian packaging metadata and build rules
 - `src/main.rs` - GTK window, Numbat session handling, and UI logic
 - `README.md` - Setup and usage notes
-- `io.github.archisman_panigrahi.wombat.Devel.json` - Flatpak manifest for GNOME Builder / Flatpak builds
+- `io.github.archisman_panigrahi.wombat.json` - Flatpak manifest for GNOME Builder / Flatpak builds
 - `data/io.github.archisman_panigrahi.wombat.desktop` - Desktop entry
 - `data/io.github.archisman_panigrahi.wombat.metainfo.xml` - AppStream metadata
 - `data/io.github.archisman_panigrahi.wombat.svg` - App icon
