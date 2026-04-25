@@ -18,7 +18,7 @@ pub fn build_about_dialog(_parent: &adw::ApplicationWindow) -> adw::AboutDialog 
         .designers(["Archisman Panigrahi https://github.com/archisman-panigrahi"])
         .comments("High-precision scientific calculator with full support for physical units, powered by Numbat programming language.")
         .version(env!("CARGO_PKG_VERSION"))
-        .license_type(gtk::License::MitX11)
+        .license_type(gtk::License::Gpl30)
         .website(WEBSITE)
         .issue_url(ISSUE_TRACKER)
         .copyright("Copyright \u{00a9} 2026 Archisman Panigrahi")

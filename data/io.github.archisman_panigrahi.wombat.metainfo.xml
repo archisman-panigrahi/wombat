@@ -4,7 +4,7 @@
   <name>Wombat</name>
   <summary>High-precision scientific calculator with full unit support, powered by Numbat</summary>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>MIT</project_license>
+  <project_license>GPL-3.0-or-later</project_license>
 
   <developer id="io.github.archisman-panigrahi">
     <name>Archisman Panigrahi</name>
@@ -28,6 +28,16 @@
   <url type="vcs-browser">https://github.com/archisman-panigrahi/wombat</url>
 
   <releases>
+    <release version="0.3.0" date="2026-04-25">
+      <description>
+        <p>New features and improvements in this release:</p>
+        <ul>
+          <li>Mobile friendly app design using libadwaita features</li>
+          <li>Switched to GPL-3+ license</li>
+        </ul>
+      </description>
+    </release>
+
     <release version="0.2.0" date="2026-04-25">
       <description>
         <p>New features in this release:</p>
