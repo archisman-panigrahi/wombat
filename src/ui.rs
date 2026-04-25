@@ -50,7 +50,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     let menu = gio::Menu::new();
     menu.append(Some("Credits"), Some("win.show-credits"));
     menu.append(Some("Reset Session"), Some("win.reset-session"));
-    menu.append(Some("Clear History"), Some("win.clear-history"));
+    menu.append(Some("Clear Inputs"), Some("win.clear-history"));
     menu.append(Some("Quit"), Some("app.quit"));
 
     let menu_button = gtk::MenuButton::builder()
@@ -134,7 +134,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
 
     let status_label = gtk::Label::new(Some(
-        "Ready. Commands like help, list, clear, save, reset, and quit work here too.",
+        "Ready. Commands like \"help\", \"list\", \"clear\", \"reset\", and \"quit\" work here too.",
     ));
     status_label.set_halign(gtk::Align::Start);
     status_label.set_wrap(true);
@@ -208,13 +208,13 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let command_history = Rc::clone(&command_history);
         clear_history_action.connect_activate(move |_, _| {
             let dialog = gtk::Dialog::builder()
-                .title("Clear History?")
+                .title("Clear all inputs?")
                 .modal(true)
                 .transient_for(&window)
                 .build();
             
             let content_area = dialog.content_area();
-            let label = gtk::Label::new(Some("This will remove all commands from the history."));
+            let label = gtk::Label::new(Some("This will erase all inputs."));
             label.set_wrap(true);
             label.set_margin_top(12);
             label.set_margin_bottom(12);
@@ -286,7 +286,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 status_label.set_text(status);
                 toast_overlay.add_toast(adw::Toast::new(status));
             } else {
-                status_label.set_text("Ready.");
+                status_label.set_text("Ready when you are!");
             }
 
             if outcome.reset_session {
