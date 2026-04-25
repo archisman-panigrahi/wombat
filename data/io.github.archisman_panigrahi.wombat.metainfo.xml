@@ -5,9 +5,11 @@
   <summary>High-precision scientific calculator with full unit support, powered by Numbat</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
+
   <developer id="io.github.archisman_panigrahi">
     <name>Archisman Panigrahi</name>
   </developer>
+
   <description>
     <p>
       Wombat gives Numbat a friendly face: a high-precision graphical calculator built for scientists and engineers.
@@ -15,20 +17,45 @@
       Type expressions naturally, mix units freely, and let Wombat keep your calculations consistent, your units correct, and your workflow smooth.
     </p>
   </description>
+
   <launchable type="desktop-id">io.github.archisman_panigrahi.wombat.desktop</launchable>
+
   <provides>
     <binary>wombat</binary>
   </provides>
+
   <url type="homepage">https://archisman-panigrahi.github.io/wombat/</url>
   <url type="vcs-browser">https://github.com/archisman-panigrahi/wombat</url>
+
   <releases>
+    <release version="2.0.0" date="2026-04-25">
+      <description>
+        <p>New features in this release:</p>
+        <ul>
+          <li>Added a Suggestions button for faster input</li>
+          <li>Mobile-friendly suggestions bar</li>
+          <li>Added Examples button</li>
+          <li>New libadwaita-based design</li>
+        </ul>
+      </description>
+    </release>
+
     <release version="0.1.0" date="2026-04-22" />
+      <description>
+        <p>New features in this release:</p>
+        <ul>
+          <li>Initial release</li>
+        </ul>
+      </description>
+    </release>
   </releases>
+
   <screenshots>
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/47446955537b7953cf6f7c23f752631298e6ef51/data/screenshots/wombat.png</image>
       <caption>Main Window</caption>
     </screenshot>
   </screenshots>
+
   <content_rating type="oars-1.1" />
 </component>
