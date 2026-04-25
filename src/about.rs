@@ -1,6 +1,6 @@
 use std::env;
 
-use gtk::prelude::DisplayExtManual;
+// use gtk::prelude::DisplayExtManual;
 
 const APP_ID: &str = "io.github.archisman_panigrahi.wombat";
 const WEBSITE: &str = "https://github.com/archisman-panigrahi/wombat";
