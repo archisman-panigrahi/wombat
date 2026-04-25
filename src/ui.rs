@@ -12,6 +12,8 @@ const HISTORY_MARGIN: i32 = 8;
 const INPUT_MARGIN: i32 = 12;
 const NUMBAT_SYNTAX_URL: &str = "https://numbat.dev/docs/examples/example-numbat_syntax/";
 const NUMBAT_EXAMPLES_URL: &str = "https://numbat.dev/docs/basics/conversions/";
+const SIDEBAR_DESKTOP_MAX_WIDTH: f64 = 280.0;
+const SIDEBAR_MOBILE_MAX_WIDTH: f64 = 280.0;
 const STARTUP_BANNER_LARGE: &str =
 r#"
 ██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
@@ -39,7 +41,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     let window = adw::ApplicationWindow::builder()
         .application(app)
-        .default_width(250)
+        .default_width(650)
         .default_height(640)
         .title("Wombat")
         .build();
@@ -54,8 +56,9 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     overlay_split_view.set_enable_hide_gesture(true);
     overlay_split_view.set_pin_sidebar(true);
     overlay_split_view.set_sidebar_position(gtk::PackType::End);
+    overlay_split_view.set_sidebar_width_unit(adw::LengthUnit::Px);
     overlay_split_view.set_min_sidebar_width(240.0);
-    overlay_split_view.set_max_sidebar_width(320.0);
+    overlay_split_view.set_max_sidebar_width(SIDEBAR_DESKTOP_MAX_WIDTH);
     let toast_overlay = adw::ToastOverlay::new();
 
     let sidebar_toggle_button = gtk::Button::new();
@@ -141,7 +144,10 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let history_buffer = history_buffer.clone();
         let history_view_ref = history_view.clone();
         let showing_startup = Rc::clone(&showing_startup);
+        let overlay_split_view = overlay_split_view.clone();
         banner_breakpoint.connect_apply(move |_| {
+            overlay_split_view.set_collapsed(true);
+            overlay_split_view.set_max_sidebar_width(SIDEBAR_MOBILE_MAX_WIDTH);
             if *showing_startup.borrow() {
                 set_startup_message(&history_buffer, &history_view_ref, STARTUP_BANNER_SMALL);
             }
@@ -151,7 +157,10 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let history_buffer = history_buffer.clone();
         let history_view_ref = history_view.clone();
         let showing_startup = Rc::clone(&showing_startup);
+        let overlay_split_view = overlay_split_view.clone();
         banner_breakpoint.connect_unapply(move |_| {
+            overlay_split_view.set_collapsed(false);
+            overlay_split_view.set_max_sidebar_width(SIDEBAR_DESKTOP_MAX_WIDTH);
             if *showing_startup.borrow() {
                 set_startup_message(&history_buffer, &history_view_ref, STARTUP_BANNER_LARGE);
             }
@@ -396,6 +405,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let icon = gtk::Image::from_icon_name(icon_name);
         let text = gtk::Label::new(Some(label));
         text.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        text.set_hexpand(true);
         text.set_halign(gtk::Align::Start);
         row.append(&icon);
         row.append(&text);
