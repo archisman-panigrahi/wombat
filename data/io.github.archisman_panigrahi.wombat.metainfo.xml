@@ -62,8 +62,13 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/8a8d83369d663cffc5a9a6aa2eec10e6144c57d6/data/screenshots/wombat.png</image>
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/63b5e2d93a1f790e2883ce2a93a53525770071ae/data/screenshots/wombat.png</image>
       <caption>Main Window</caption>
+    </screenshot>
+
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/63b5e2d93a1f790e2883ce2a93a53525770071ae/data/screenshots/wombat.png</image>
+      <caption>Wombat suggestion bar</caption>
     </screenshot>
   </screenshots>
 
