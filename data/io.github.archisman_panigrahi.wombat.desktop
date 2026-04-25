@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Wombat
-Comment=Effortless unit conversion for scientific computing
-Exec=wombat
-Icon=io.github.archisman_panigrahi.wombat
-Terminal=false
-Categories=Utility;Science;Education;
-StartupNotify=true
