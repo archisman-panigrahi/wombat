@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.github.archisman_panigrahi.wombat</id>
   <name>Wombat</name>
-  <summary>High-precision scientific calculator with full unit support, powered by Numbat</summary>
+  <summary>Unit aware scientific calculator</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
 
@@ -59,6 +59,11 @@
       </description>
     </release>
   </releases>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#f6d2d2</color>
+    <color type="primary" scheme_preference="dark">#77767b</color>
+  </branding>
 
   <screenshots>
     <screenshot type="default">
