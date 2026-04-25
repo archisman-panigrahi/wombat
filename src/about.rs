@@ -21,10 +21,17 @@ pub fn build_about_dialog(_parent: &adw::ApplicationWindow) -> adw::AboutDialog 
         .license_type(gtk::License::MitX11)
         .website(WEBSITE)
         .issue_url(ISSUE_TRACKER)
-        .copyright("Copyright 2026 Archisman Panigrahi")
+        .copyright("Copyright \u{00a9} 2026 Archisman Panigrahi")
         // .debug_info(info)
         // .debug_info_filename("wombat-debug")
         .build();
+
+    dialog.add_legal_section(
+        "\nNumbat",
+        Some("Copyright \u{00a9} 2022-2026 David Peter, and all Numbat contributors"),
+        gtk::License::Custom,
+        Some("Released jointly under the <a href=\"https://opensource.org/licenses/MIT\">MIT</a> and <a href=\"https://www.apache.org/licenses/LICENSE-2.0\">Apache-2.0</a> licenses."),
+    );
 
     dialog.add_credit_section(
         Some("Thanks"),
@@ -34,7 +41,7 @@ pub fn build_about_dialog(_parent: &adw::ApplicationWindow) -> adw::AboutDialog 
         ],
     );
 
-    dialog.add_link("Numbat", "https://github.com/numbat.dev");
+    dialog.add_link("Numbat", "https://numbat.dev");
 
     dialog
 }
