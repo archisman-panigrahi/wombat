@@ -3,7 +3,7 @@
 - Mobile support for GNU/Linux with libadwaita (need to make the design more responsive)
 - Add buttons for Numbat documentation and syntax
 - Add buttons which will show a list of all the functions
-- Implement "`Tab` to autocomplete"
+- ~~Implement "`Tab` to autocomplete"~~
 - Build flatpak (already builds locally, need to publish to Flathub/GitHub actions)
 - Debian package (code is ready, needs testing in Ubuntu 26.04 with latest libadwaita)
 - ~~buttons for common fundamental constants (configurable buttons)~~
