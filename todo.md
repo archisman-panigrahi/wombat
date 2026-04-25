@@ -6,9 +6,11 @@
 - ~~Implement "`Tab` to autocomplete"~~
 - Build flatpak (already builds locally, need to publish to Flathub/GitHub actions)
 - Debian package (code is ready, needs testing in Ubuntu 26.04 with latest libadwaita)
+- Replace the sidebar reset/erase dialogs with  AdwAlertDialog
+- Get rid of headerbar, similar to Foliate or Euphonica
 - ~~buttons for common fundamental constants (configurable buttons)~~
 - scroll down to very bottom after a command is run
-- Close button in about dialog and a proper about dialog (details, report an issue, credits).
+- ~~Close button in about dialog and a proper about dialog (details, report an issue, credits).~~
 - Better theme, as in https://github.com/htkhiem/euphonica
 - Export and import notebooks (with variables)
 - Import (and delete) additional Numbat modules
