@@ -26,6 +26,14 @@ pub fn ensure_numbat_tags(history_buffer: &gtk::TextBuffer) {
             table.add(&tag);
         }
     }
+
+    if table.lookup("nb-banner").is_none() {
+        let tag = gtk::TextTag::builder()
+            .name("nb-banner")
+            .wrap_mode(gtk::WrapMode::None)
+            .build();
+        table.add(&tag);
+    }
 }
 
 pub fn append_history(
@@ -57,8 +65,8 @@ pub fn set_startup_message(
     history_buffer.set_text("");
 
     let mut end_iter = history_buffer.end_iter();
-    history_buffer.insert(&mut end_iter, banner);
-    history_buffer.insert(&mut end_iter, "\n");
+    history_buffer.insert_with_tags_by_name(&mut end_iter, banner, &["nb-banner"]);
+    history_buffer.insert_with_tags_by_name(&mut end_iter, "\n", &["nb-banner"]);
     history_buffer.insert(&mut end_iter, "  Wombat v");
     history_buffer.insert(&mut end_iter, env!("CARGO_PKG_VERSION"));
     history_buffer.insert(&mut end_iter, ", powered by Numbat v");

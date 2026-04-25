@@ -12,24 +12,34 @@ const HISTORY_MARGIN: i32 = 8;
 const INPUT_MARGIN: i32 = 12;
 const NUMBAT_SYNTAX_URL: &str = "https://numbat.dev/docs/examples/example-numbat_syntax/";
 const NUMBAT_EXAMPLES_URL: &str = "https://numbat.dev/docs/basics/conversions/";
-const STARTUP_BANNER: &str = 
-r#" 
+const STARTUP_BANNER_LARGE: &str =
+r#"
 ██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
 ██║    ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝
-██║ █╗ ██║██║   ██║██╔████╔██║██████╔╝███████║   ██║   
-██║███╗██║██║   ██║██║╚██╔╝██║██╔══██╗██╔══██║   ██║   
-╚███╔███╔╝╚██████╔╝██║ ╚═╝ ██║██████╔╝██║  ██║   ██║   
+██║ █╗ ██║██║   ██║██╔████╔██║██████╔╝███████║   ██║
+██║███╗██║██║   ██║██║╚██╔╝██║██╔══██╗██╔══██║   ██║
+╚███╔███╔╝╚██████╔╝██║ ╚═╝ ██║██████╔╝██║  ██║   ██║
  ╚══╝╚══╝  ╚═════╝ ╚═╝     ╚═╝╚═════╝ ╚═╝  ╚═╝   ╚═╝"#;
+
+const STARTUP_BANNER_SMALL: &str =
+r#"
+░▒█░░▒█░▒█▀▀▀█░▒█▀▄▀█░▒█▀▀▄░█▀▀▄░▀▀█▀▀
+░▒█▒█▒█░▒█░░▒█░▒█▒█▒█░▒█▀▀▄▒█▄▄█░░▒█░░
+░▒▀▄▀▄▀░▒█▄▄▄█░▒█░░▒█░▒█▄▄█▒█░▒█░░▒█░░
+"#;
+
+const BANNER_SWITCH_WIDTH: i32 = 500;
 
 pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     let session = Rc::new(RefCell::new(NumbatSession::new()));
     let command_history: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
     let history_cursor: Rc<RefCell<Option<usize>>> = Rc::new(RefCell::new(None));
     let draft_input: Rc<RefCell<String>> = Rc::new(RefCell::new(String::new()));
+    let showing_startup: Rc<RefCell<bool>> = Rc::new(RefCell::new(true));
 
     let window = adw::ApplicationWindow::builder()
         .application(app)
-        .default_width(900)
+        .default_width(250)
         .default_height(640)
         .title("Wombat")
         .build();
@@ -121,6 +131,33 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     let history_buffer = gtk::TextBuffer::new(None);
     history_view.set_buffer(Some(&history_buffer));
     ensure_numbat_tags(&history_buffer);
+
+    let banner_breakpoint = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
+        adw::BreakpointConditionLengthType::MaxWidth,
+        BANNER_SWITCH_WIDTH as f64,
+        adw::LengthUnit::Px,
+    ));
+    {
+        let history_buffer = history_buffer.clone();
+        let history_view_ref = history_view.clone();
+        let showing_startup = Rc::clone(&showing_startup);
+        banner_breakpoint.connect_apply(move |_| {
+            if *showing_startup.borrow() {
+                set_startup_message(&history_buffer, &history_view_ref, STARTUP_BANNER_SMALL);
+            }
+        });
+    }
+    {
+        let history_buffer = history_buffer.clone();
+        let history_view_ref = history_view.clone();
+        let showing_startup = Rc::clone(&showing_startup);
+        banner_breakpoint.connect_unapply(move |_| {
+            if *showing_startup.borrow() {
+                set_startup_message(&history_buffer, &history_view_ref, STARTUP_BANNER_LARGE);
+            }
+        });
+    }
+    window.add_breakpoint(banner_breakpoint);
 
     let history_scroller = gtk::ScrolledWindow::builder()
         .hscrollbar_policy(gtk::PolicyType::Automatic)
@@ -288,6 +325,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let status_label = status_label.clone();
         let toast_overlay = toast_overlay.clone();
         let app = app.clone();
+        let showing_startup = Rc::clone(&showing_startup);
         move |input: String| {
             let trimmed = input.trim().to_string();
             if trimmed.is_empty() {
@@ -301,6 +339,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                     history.push(trimmed.clone());
                 }
             }
+            *showing_startup.borrow_mut() = false;
             *history_cursor.borrow_mut() = None;
             draft_input.borrow_mut().clear();
 
@@ -670,7 +709,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         input_entry.add_controller(key_controller);
     }
 
-    set_startup_message(&history_buffer, &history_view, STARTUP_BANNER);
+    set_startup_message(&history_buffer, &history_view, STARTUP_BANNER_LARGE);
 
     let content_toolbar_view = adw::ToolbarView::new();
     content_toolbar_view.add_top_bar(&header);
