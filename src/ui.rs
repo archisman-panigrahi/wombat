@@ -224,38 +224,26 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let session = Rc::clone(&session);
         let history_buffer = history_buffer.clone();
         reset_session_action.connect_activate(move |_, _| {
-            let dialog = gtk::Dialog::builder()
-                .title("Reset Session?")
-                .modal(true)
-                .transient_for(&window)
-                .build();
-            
-            let content_area = dialog.content_area();
-            let label = gtk::Label::new(Some("This will clear all variables and start fresh."));
-            label.set_wrap(true);
-            label.set_margin_top(12);
-            label.set_margin_bottom(12);
-            label.set_margin_start(12);
-            label.set_margin_end(12);
-            content_area.append(&label);
-
-            dialog.add_button("No", gtk::ResponseType::Cancel);
-            dialog.add_button("Yes", gtk::ResponseType::Accept);
-            dialog.set_default_response(gtk::ResponseType::Cancel);
+            let dialog = adw::AlertDialog::new(
+                Some("Reset Session?"),
+                Some("This will clear all variables and start fresh."),
+            );
+            dialog.add_response("cancel", "Cancel");
+            dialog.add_response("reset", "Reset");
+            dialog.set_response_appearance("reset", adw::ResponseAppearance::Destructive);
+            dialog.set_default_response(Some("cancel"));
+            dialog.set_close_response("cancel");
 
             let session = Rc::clone(&session);
             let history_buffer = history_buffer.clone();
-            dialog.connect_response(move |dialog, response_id| {
-                if response_id == gtk::ResponseType::Accept {
-                    // Reset session by creating a new one
+            dialog.connect_response(None, move |_, response| {
+                if response == "reset" {
                     *session.borrow_mut() = NumbatSession::new();
-                    // Clear history display
                     history_buffer.set_text("");
                 }
-                dialog.close();
             });
 
-            dialog.present();
+            dialog.present(Some(&window));
         });
     }
     window.add_action(&reset_session_action);
@@ -266,36 +254,26 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let history_buffer = history_buffer.clone();
         let command_history = Rc::clone(&command_history);
         clear_history_action.connect_activate(move |_, _| {
-            let dialog = gtk::Dialog::builder()
-                .title("Clear all inputs?")
-                .modal(true)
-                .transient_for(&window)
-                .build();
-            
-            let content_area = dialog.content_area();
-            let label = gtk::Label::new(Some("This will erase all inputs."));
-            label.set_wrap(true);
-            label.set_margin_top(12);
-            label.set_margin_bottom(12);
-            label.set_margin_start(12);
-            label.set_margin_end(12);
-            content_area.append(&label);
-
-            dialog.add_button("No", gtk::ResponseType::Cancel);
-            dialog.add_button("Yes", gtk::ResponseType::Accept);
-            dialog.set_default_response(gtk::ResponseType::Cancel);
+            let dialog = adw::AlertDialog::new(
+                Some("Clear All Inputs?"),
+                Some("This will erase all inputs."),
+            );
+            dialog.add_response("cancel", "Cancel");
+            dialog.add_response("clear", "Clear");
+            dialog.set_response_appearance("clear", adw::ResponseAppearance::Destructive);
+            dialog.set_default_response(Some("cancel"));
+            dialog.set_close_response("cancel");
 
             let history_buffer = history_buffer.clone();
             let command_history = Rc::clone(&command_history);
-            dialog.connect_response(move |dialog, response_id| {
-                if response_id == gtk::ResponseType::Accept {
+            dialog.connect_response(None, move |_, response| {
+                if response == "clear" {
                     history_buffer.set_text("");
                     command_history.borrow_mut().clear();
                 }
-                dialog.close();
             });
 
-            dialog.present();
+            dialog.present(Some(&window));
         });
     }
     window.add_action(&clear_history_action);
