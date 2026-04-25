@@ -190,6 +190,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .transition_type(gtk::RevealerTransitionType::SlideDown)
         .reveal_child(false)
         .build();
+    let completion_buttons: Rc<RefCell<Vec<gtk::Button>>> = Rc::new(RefCell::new(Vec::new()));
     let completion_list = gtk::Box::new(gtk::Orientation::Vertical, 4);
     completion_list.set_margin_top(6);
     completion_list.set_margin_bottom(6);
@@ -665,6 +666,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let suggestions_button = suggestions_button.clone();
         let completion_panel = completion_panel.clone();
         let completion_list = completion_list.clone();
+        let completion_buttons = Rc::clone(&completion_buttons);
         input_entry.connect_changed(move |entry| {
             let has_input = !entry.text().trim().is_empty();
             suggestions_button.set_sensitive(has_input);
@@ -673,6 +675,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 while let Some(child) = completion_list.first_child() {
                     completion_list.remove(&child);
                 }
+                completion_buttons.borrow_mut().clear();
                 completion_panel.set_reveal_child(false);
             }
         });
@@ -683,10 +686,12 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let input_entry = input_entry.clone();
         let completion_panel = completion_panel.clone();
         let completion_list = completion_list.clone();
+        let completion_buttons = Rc::clone(&completion_buttons);
         Rc::new(move || {
             while let Some(child) = completion_list.first_child() {
                 completion_list.remove(&child);
             }
+            completion_buttons.borrow_mut().clear();
 
             let input = input_entry.text();
             let cursor = input_entry.position().max(0) as usize;
@@ -717,6 +722,38 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 button.set_hexpand(true);
                 button.add_css_class("flat");
 
+                let suggestion_index = completion_buttons.borrow().len();
+                let completion_buttons_for_keys = Rc::clone(&completion_buttons);
+                let input_entry_for_keys = input_entry.clone();
+                let completion_panel_for_keys = completion_panel.clone();
+                let key_controller = gtk::EventControllerKey::new();
+                key_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
+                key_controller.connect_key_pressed(move |_, key, _, _| match key {
+                    gtk::gdk::Key::Up => {
+                        let button_count = completion_buttons_for_keys.borrow().len();
+                        focus_button(
+                            &completion_buttons_for_keys,
+                            previous_index(suggestion_index, button_count),
+                        );
+                        gtk::glib::Propagation::Stop
+                    }
+                    gtk::gdk::Key::Down => {
+                        let button_count = completion_buttons_for_keys.borrow().len();
+                        focus_button(
+                            &completion_buttons_for_keys,
+                            next_index(suggestion_index, button_count),
+                        );
+                        gtk::glib::Propagation::Stop
+                    }
+                    gtk::gdk::Key::Escape => {
+                        completion_panel_for_keys.set_reveal_child(false);
+                        input_entry_for_keys.grab_focus();
+                        gtk::glib::Propagation::Stop
+                    }
+                    _ => gtk::glib::Propagation::Proceed,
+                });
+                button.add_controller(key_controller);
+
                 let input_entry = input_entry.clone();
                 let completion_panel = completion_panel.clone();
                 let suggestion = suggestion.clone();
@@ -735,8 +772,10 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                     input_entry.set_text(&text);
                     input_entry.set_position(-1);
                     completion_panel.set_reveal_child(false);
+                    input_entry.grab_focus();
                 });
 
+                completion_buttons.borrow_mut().push(button.clone());
                 completion_list.append(&button);
             }
 
@@ -755,15 +794,26 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let draft_input = Rc::clone(&draft_input);
         let input_entry_for_keys = input_entry.clone();
         let completion_panel = completion_panel.clone();
+        let completion_buttons = Rc::clone(&completion_buttons);
         let show_completions = Rc::clone(&show_completions);
         let key_controller = gtk::EventControllerKey::new();
         key_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
         key_controller.connect_key_pressed(move |_, key, _, _| match key {
             gtk::gdk::Key::Tab => {
-                show_completions();
+                if completion_panel.reveals_child() && !completion_buttons.borrow().is_empty() {
+                    focus_first_button(&completion_buttons);
+                } else {
+                    show_completions();
+                }
                 gtk::glib::Propagation::Stop
             }
             gtk::gdk::Key::Up => {
+                if completion_panel.reveals_child() && !completion_buttons.borrow().is_empty() {
+                    let button_count = completion_buttons.borrow().len();
+                    focus_button(&completion_buttons, button_count.saturating_sub(1));
+                    return gtk::glib::Propagation::Stop;
+                }
+
                 completion_panel.set_reveal_child(false);
                 let history = command_history.borrow();
                 if history.is_empty() {
@@ -784,6 +834,11 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 gtk::glib::Propagation::Stop
             }
             gtk::gdk::Key::Down => {
+                if completion_panel.reveals_child() && !completion_buttons.borrow().is_empty() {
+                    focus_first_button(&completion_buttons);
+                    return gtk::glib::Propagation::Stop;
+                }
+
                 completion_panel.set_reveal_child(false);
                 let history = command_history.borrow();
                 if history.is_empty() {
@@ -880,11 +935,19 @@ fn build_shortcuts_dialog() -> adw::ShortcutsDialog {
 }
 
 fn focus_first_sidebar_button(sidebar_buttons: &Rc<RefCell<Vec<gtk::Button>>>) {
-    focus_sidebar_button(sidebar_buttons, 0);
+    focus_first_button(sidebar_buttons);
 }
 
 fn focus_sidebar_button(sidebar_buttons: &Rc<RefCell<Vec<gtk::Button>>>, index: usize) {
-    if let Some(button) = sidebar_buttons.borrow().get(index) {
+    focus_button(sidebar_buttons, index);
+}
+
+fn focus_first_button(buttons: &Rc<RefCell<Vec<gtk::Button>>>) {
+    focus_button(buttons, 0);
+}
+
+fn focus_button(buttons: &Rc<RefCell<Vec<gtk::Button>>>, index: usize) {
+    if let Some(button) = buttons.borrow().get(index) {
         button.grab_focus();
     }
 }
