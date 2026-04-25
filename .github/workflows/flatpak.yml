@@ -13,9 +13,12 @@ jobs:
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
       options: --privileged
+
     steps:
-      - name: Checkout repository
+      - name: Checkout flatpak-build branch
         uses: actions/checkout@v4
+        with:
+          ref: flatpak-build
 
       - name: Build Flatpak bundle
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
