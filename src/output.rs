@@ -73,11 +73,17 @@ pub fn set_startup_message(
     history_buffer.insert(&mut end_iter, env!("CARGO_PKG_VERSION"));
     history_buffer.insert(&mut end_iter, ", powered by Numbat v");
     history_buffer.insert(&mut end_iter, env!("NUMBAT_VERSION"));
-    history_buffer.insert(&mut end_iter, "\n  ........................................");
+    history_buffer.insert(
+        &mut end_iter,
+        "\n  ........................................",
+    );
     history_buffer.insert(&mut end_iter, "\n\n  Type something like ");
     insert_colored_input(history_buffer, &mut end_iter, "\"2 m + 30 inch to cm\"");
     history_buffer.insert(&mut end_iter, " to get started.");
-    history_buffer.insert(&mut end_iter, "\n  Or check out \"Quick Syntax Help\" in the menu\n");
+    history_buffer.insert(
+        &mut end_iter,
+        "\n  Or check out \"Quick Syntax Help\" in the menu\n",
+    );
 
     let mut end_iter = history_buffer.end_iter();
     history_view.scroll_to_iter(&mut end_iter, 0.0, false, 0.0, 1.0);
@@ -127,10 +133,30 @@ fn insert_output_event(
     }
 }
 
-fn insert_colored_input(history_buffer: &gtk::TextBuffer, end_iter: &mut gtk::TextIter, input: &str) {
+fn insert_colored_input(
+    history_buffer: &gtk::TextBuffer,
+    end_iter: &mut gtk::TextIter,
+    input: &str,
+) {
     let keywords = [
-        "use", "let", "fn", "where", "dimension", "unit", "struct", "if", "then", "else",
-        "true", "false", "per", "to", "print", "assert", "assert_eq", "type",
+        "use",
+        "let",
+        "fn",
+        "where",
+        "dimension",
+        "unit",
+        "struct",
+        "if",
+        "then",
+        "else",
+        "true",
+        "false",
+        "per",
+        "to",
+        "print",
+        "assert",
+        "assert_eq",
+        "type",
     ];
 
     let mut chars = input.char_indices().peekable();
@@ -161,7 +187,9 @@ fn insert_colored_input(history_buffer: &gtk::TextBuffer, end_iter: &mut gtk::Te
             continue;
         }
 
-        if ch.is_ascii_digit() || (ch == '.' && chars.peek().is_some_and(|(_, c)| c.is_ascii_digit())) {
+        if ch.is_ascii_digit()
+            || (ch == '.' && chars.peek().is_some_and(|(_, c)| c.is_ascii_digit()))
+        {
             let mut end = start + ch.len_utf8();
             while let Some((idx, c)) = chars.peek() {
                 if c.is_ascii_digit() || matches!(*c, '.' | '_' | 'e' | 'E' | '+' | '-') {

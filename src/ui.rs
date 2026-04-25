@@ -14,8 +14,7 @@ const NUMBAT_SYNTAX_URL: &str = "https://numbat.dev/docs/examples/example-numbat
 const NUMBAT_EXAMPLES_URL: &str = "https://numbat.dev/docs/basics/conversions/";
 const SIDEBAR_DESKTOP_MAX_WIDTH: f64 = 280.0;
 const SIDEBAR_MOBILE_MAX_WIDTH: f64 = 280.0;
-const STARTUP_BANNER_LARGE: &str =
-r#"
+const STARTUP_BANNER_LARGE: &str = r#"
 ██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
 ██║    ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝
 ██║ █╗ ██║██║   ██║██╔████╔██║██████╔╝███████║   ██║
@@ -23,8 +22,7 @@ r#"
 ╚███╔███╔╝╚██████╔╝██║ ╚═╝ ██║██████╔╝██║  ██║   ██║
  ╚══╝╚══╝  ╚═════╝ ╚═╝     ╚═╝╚═════╝ ╚═╝  ╚═╝   ╚═╝"#;
 
-const STARTUP_BANNER_SMALL: &str =
-r#"
+const STARTUP_BANNER_SMALL: &str = r#"
 ░▒█░░▒█░▒█▀▀▀█░▒█▀▄▀█░▒█▀▀▄░█▀▀▄░▀▀█▀▀
 ░▒█▒█▒█░▒█░░▒█░▒█▒█▒█░▒█▀▀▄▒█▄▄█░░▒█░░
 ░▒▀▄▀▄▀░▒█▄▄▄█░▒█░░▒█░▒█▄▄█▒█░▒█░░▒█░░
@@ -63,13 +61,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     let sidebar_toggle_button = gtk::Button::new();
     sidebar_toggle_button.set_icon_name("sidebar-show-right-symbolic");
-    sidebar_toggle_button.set_tooltip_text(Some("Toggle Options Panel"));
-    {
-        let overlay_split_view = overlay_split_view.clone();
-        sidebar_toggle_button.connect_clicked(move |_| {
-            overlay_split_view.set_show_sidebar(!overlay_split_view.shows_sidebar());
-        });
-    }
+    sidebar_toggle_button.set_tooltip_text(Some("Toggle Options Panel (F10)"));
     header.pack_end(&sidebar_toggle_button);
 
     let show_credits_action = gio::SimpleAction::new("show-credits", None);
@@ -84,10 +76,9 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     let open_numbat_syntax_action = gio::SimpleAction::new("open-numbat-syntax", None);
     open_numbat_syntax_action.connect_activate(move |_, _| {
-        if let Err(err) = gio::AppInfo::launch_default_for_uri(
-            NUMBAT_SYNTAX_URL,
-            None::<&gio::AppLaunchContext>,
-        ) {
+        if let Err(err) =
+            gio::AppInfo::launch_default_for_uri(NUMBAT_SYNTAX_URL, None::<&gio::AppLaunchContext>)
+        {
             eprintln!("Failed to open Numbat syntax docs: {err}");
         }
     });
@@ -116,6 +107,18 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         });
     }
     window.add_action(&toggle_fullscreen_action);
+    app.set_accels_for_action("win.toggle-fullscreen", &["F11"]);
+
+    let show_keyboard_shortcuts_action = gio::SimpleAction::new("show-keyboard-shortcuts", None);
+    {
+        let window = window.clone();
+        show_keyboard_shortcuts_action.connect_activate(move |_, _| {
+            let shortcuts_dialog = build_shortcuts_dialog();
+            shortcuts_dialog.present(Some(&window));
+        });
+    }
+    window.add_action(&show_keyboard_shortcuts_action);
+    app.set_accels_for_action("win.show-keyboard-shortcuts", &["<Control>question"]);
 
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
     root.set_margin_top(HISTORY_MARGIN);
@@ -221,7 +224,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     constants_row.set_valign(gtk::Align::Start);
     constants_row.set_max_children_per_line(8);
     constants_row.set_selection_mode(gtk::SelectionMode::None);
-    
+
     let constants: &[(&str, &str)] = &[
         ("ℏ", "h_bar"),
         ("k_B", "boltzmann_constant"),
@@ -395,31 +398,38 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
     window.add_action(&open_numbat_list_action);
 
-    let make_sidebar_button = |icon_name: &str, label: &str, action: gio::SimpleAction| {
-        let button = gtk::Button::new();
-        button.set_hexpand(true);
-        button.set_halign(gtk::Align::Fill);
-        button.add_css_class("flat");
+    let sidebar_buttons: Rc<RefCell<Vec<gtk::Button>>> = Rc::new(RefCell::new(Vec::new()));
 
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-        let icon = gtk::Image::from_icon_name(icon_name);
-        let text = gtk::Label::new(Some(label));
-        text.set_ellipsize(gtk::pango::EllipsizeMode::End);
-        text.set_hexpand(true);
-        text.set_halign(gtk::Align::Start);
-        row.append(&icon);
-        row.append(&text);
-        button.set_child(Some(&row));
-
+    let make_sidebar_button = {
         let overlay_split_view = overlay_split_view.clone();
-        button.connect_clicked(move |_| {
-            action.activate(None);
-            if overlay_split_view.is_collapsed() {
-                overlay_split_view.set_show_sidebar(false);
-            }
-        });
+        let sidebar_buttons = Rc::clone(&sidebar_buttons);
+        move |icon_name: &str, label: &str, action: gio::SimpleAction| {
+            let button = gtk::Button::new();
+            button.set_hexpand(true);
+            button.set_halign(gtk::Align::Fill);
+            button.add_css_class("flat");
 
-        button
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+            let icon = gtk::Image::from_icon_name(icon_name);
+            let text = gtk::Label::new(Some(label));
+            text.set_ellipsize(gtk::pango::EllipsizeMode::End);
+            text.set_hexpand(true);
+            text.set_halign(gtk::Align::Start);
+            row.append(&icon);
+            row.append(&text);
+            button.set_child(Some(&row));
+
+            let overlay_split_view = overlay_split_view.clone();
+            button.connect_clicked(move |_| {
+                action.activate(None);
+                if overlay_split_view.is_collapsed() {
+                    overlay_split_view.set_show_sidebar(false);
+                }
+            });
+
+            sidebar_buttons.borrow_mut().push(button.clone());
+            button
+        }
     };
 
     let sidebar_panel = gtk::Box::new(gtk::Orientation::Vertical, 6);
@@ -428,7 +438,11 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     sidebar_panel.set_margin_start(6);
     sidebar_panel.set_margin_end(6);
 
-    sidebar_panel.append(&make_sidebar_button("help-faq-symbolic", "Quick Syntax Help", open_numbat_help_action.clone()));
+    sidebar_panel.append(&make_sidebar_button(
+        "help-faq-symbolic",
+        "Quick Syntax Help",
+        open_numbat_help_action.clone(),
+    ));
     sidebar_panel.append(&make_sidebar_button(
         "view-list-symbolic",
         "List of Constants",
@@ -442,16 +456,37 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         "Detailed Numbat Syntax",
         open_numbat_syntax_action.clone(),
     ));
-    sidebar_panel.append(&make_sidebar_button("globe-symbolic", "Online Examples", open_examples_action.clone()));
+    sidebar_panel.append(&make_sidebar_button(
+        "globe-symbolic",
+        "Online Examples",
+        open_examples_action.clone(),
+    ));
 
     sidebar_panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
 
-    sidebar_panel.append(&make_sidebar_button("view-refresh-symbolic", "Reset Session", reset_session_action.clone()));
-    sidebar_panel.append(&make_sidebar_button("edit-clear-all-symbolic", "Clear Inputs", clear_history_action.clone()));
+    sidebar_panel.append(&make_sidebar_button(
+        "view-refresh-symbolic",
+        "Reset Session",
+        reset_session_action.clone(),
+    ));
+    sidebar_panel.append(&make_sidebar_button(
+        "edit-clear-all-symbolic",
+        "Clear Inputs",
+        clear_history_action.clone(),
+    ));
 
     sidebar_panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
 
-    sidebar_panel.append(&make_sidebar_button("help-about-symbolic", "About", show_credits_action.clone()));
+    sidebar_panel.append(&make_sidebar_button(
+        "help-about-symbolic",
+        "About",
+        show_credits_action.clone(),
+    ));
+    sidebar_panel.append(&make_sidebar_button(
+        "preferences-desktop-keyboard-shortcuts-symbolic",
+        "Keyboard Shortcuts",
+        show_keyboard_shortcuts_action.clone(),
+    ));
     {
         let button = gtk::Button::new();
         button.set_hexpand(true);
@@ -483,6 +518,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 overlay_split_view.set_show_sidebar(false);
             }
         });
+        sidebar_buttons.borrow_mut().push(button.clone());
         sidebar_panel.append(&button);
     }
     {
@@ -512,6 +548,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 overlay_split_view.set_show_sidebar(false);
             }
         });
+        sidebar_buttons.borrow_mut().push(button.clone());
         sidebar_panel.append(&button);
     }
 
@@ -525,14 +562,23 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     let sidebar_header_bar = adw::HeaderBar::new();
     sidebar_header_bar.set_show_end_title_buttons(false);
     sidebar_header_bar.set_show_start_title_buttons(false);
+    let sidebar_title_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    sidebar_title_box.set_halign(gtk::Align::Center);
     let sidebar_title_widget = gtk::Label::new(Some("Options"));
-    sidebar_header_bar.set_title_widget(Some(&sidebar_title_widget));
+    let sidebar_shortcut_label = gtk::Label::new(Some("F10"));
+    sidebar_shortcut_label.add_css_class("dim-label");
+    sidebar_shortcut_label.add_css_class("caption");
+    sidebar_title_box.append(&sidebar_title_widget);
+    sidebar_title_box.append(&sidebar_shortcut_label);
+    sidebar_header_bar.set_title_widget(Some(&sidebar_title_box));
     let close_sidebar_button = gtk::Button::new();
     close_sidebar_button.set_icon_name("window-close-symbolic");
     {
         let overlay_split_view = overlay_split_view.clone();
+        let input_entry = input_entry.clone();
         close_sidebar_button.connect_clicked(move |_| {
             overlay_split_view.set_show_sidebar(false);
+            input_entry.grab_focus();
         });
     }
     sidebar_header_bar.pack_end(&close_sidebar_button);
@@ -541,6 +587,57 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     sidebar_toolbar_view.add_top_bar(&sidebar_header_bar);
     sidebar_toolbar_view.set_content(Some(&sidebar_scroller));
     overlay_split_view.set_sidebar(Some(&sidebar_toolbar_view));
+
+    {
+        let overlay_split_view = overlay_split_view.clone();
+        let input_entry = input_entry.clone();
+        let sidebar_buttons = Rc::clone(&sidebar_buttons);
+        let toggle_options_action = gio::SimpleAction::new("toggle-options", None);
+        toggle_options_action.connect_activate(move |_, _| {
+            let show_sidebar = !overlay_split_view.shows_sidebar();
+            overlay_split_view.set_show_sidebar(show_sidebar);
+
+            if show_sidebar {
+                focus_first_sidebar_button(&sidebar_buttons);
+            } else {
+                input_entry.grab_focus();
+            }
+        });
+        window.add_action(&toggle_options_action);
+        app.set_accels_for_action("win.toggle-options", &["F10"]);
+    }
+
+    {
+        let overlay_split_view = overlay_split_view.clone();
+        sidebar_toggle_button.connect_clicked(move |_| {
+            overlay_split_view
+                .activate_action("win.toggle-options", None)
+                .unwrap_or_else(|err| eprintln!("Failed to toggle options panel: {err}"));
+        });
+    }
+
+    {
+        let sidebar_buttons_snapshot = sidebar_buttons.borrow().clone();
+        for (index, button) in sidebar_buttons_snapshot.iter().enumerate() {
+            let sidebar_buttons = Rc::clone(&sidebar_buttons);
+            let key_controller = gtk::EventControllerKey::new();
+            key_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
+            key_controller.connect_key_pressed(move |_, key, _, _| match key {
+                gtk::gdk::Key::Up => {
+                    let button_count = sidebar_buttons.borrow().len();
+                    focus_sidebar_button(&sidebar_buttons, previous_index(index, button_count));
+                    gtk::glib::Propagation::Stop
+                }
+                gtk::gdk::Key::Down => {
+                    let button_count = sidebar_buttons.borrow().len();
+                    focus_sidebar_button(&sidebar_buttons, next_index(index, button_count));
+                    gtk::glib::Propagation::Stop
+                }
+                _ => gtk::glib::Propagation::Proceed,
+            });
+            button.add_controller(key_controller);
+        }
+    }
 
     let submit = {
         let submit_input = Rc::clone(&submit_input);
@@ -746,4 +843,64 @@ fn completion_prefix_start(text: &str, cursor: usize) -> usize {
     }
 
     prefix_start
+}
+
+fn build_shortcuts_dialog() -> adw::ShortcutsDialog {
+    let dialog = adw::ShortcutsDialog::builder()
+        .title("Keyboard Shortcuts")
+        .build();
+
+    let general_section = adw::ShortcutsSection::new(Some("General"));
+    general_section.add(adw::ShortcutsItem::new("Toggle Options Panel", "F10"));
+    general_section.add(adw::ShortcutsItem::new(
+        "Show Keyboard Shortcuts",
+        "<Control>question",
+    ));
+    general_section.add(adw::ShortcutsItem::new("Toggle Fullscreen", "F11"));
+    general_section.add(adw::ShortcutsItem::new("Quit", "<Control>q"));
+    dialog.add(general_section);
+
+    let input_section = adw::ShortcutsSection::new(Some("Input"));
+    input_section.add(adw::ShortcutsItem::new("Run Input", "Return"));
+    input_section.add(adw::ShortcutsItem::new("Show Suggestions", "Tab"));
+    input_section.add(adw::ShortcutsItem::new("Previous Input", "Up"));
+    input_section.add(adw::ShortcutsItem::new("Next Input", "Down"));
+    dialog.add(input_section);
+
+    let options_section = adw::ShortcutsSection::new(Some("Options"));
+    options_section.add(adw::ShortcutsItem::new("Move to Previous Option", "Up"));
+    options_section.add(adw::ShortcutsItem::new("Move to Next Option", "Down"));
+    options_section.add(adw::ShortcutsItem::new(
+        "Activate Selected Option",
+        "Return",
+    ));
+    dialog.add(options_section);
+
+    dialog
+}
+
+fn focus_first_sidebar_button(sidebar_buttons: &Rc<RefCell<Vec<gtk::Button>>>) {
+    focus_sidebar_button(sidebar_buttons, 0);
+}
+
+fn focus_sidebar_button(sidebar_buttons: &Rc<RefCell<Vec<gtk::Button>>>, index: usize) {
+    if let Some(button) = sidebar_buttons.borrow().get(index) {
+        button.grab_focus();
+    }
+}
+
+fn previous_index(index: usize, button_count: usize) -> usize {
+    if button_count == 0 {
+        0
+    } else {
+        index.checked_sub(1).unwrap_or(button_count - 1)
+    }
+}
+
+fn next_index(index: usize, button_count: usize) -> usize {
+    if button_count == 0 {
+        0
+    } else {
+        (index + 1) % button_count
+    }
 }

@@ -112,18 +112,19 @@ impl NumbatSession {
 
         let mut is_error = false;
         let mut status = None;
-        let control_flow = match self
-            .command_runner
-            .try_run_command(trimmed, &mut self.context, &mut ())
-        {
-            Ok(control_flow) => control_flow,
-            Err(error) => {
-                self.output.push_text(&format!("{error:?}"));
-                is_error = true;
-                status = Some("Command error");
-                CommandControlFlow::Continue
-            }
-        };
+        let control_flow =
+            match self
+                .command_runner
+                .try_run_command(trimmed, &mut self.context, &mut ())
+            {
+                Ok(control_flow) => control_flow,
+                Err(error) => {
+                    self.output.push_text(&format!("{error:?}"));
+                    is_error = true;
+                    status = Some("Command error");
+                    CommandControlFlow::Continue
+                }
+            };
 
         let mut reset_session = false;
         let mut quit = false;
