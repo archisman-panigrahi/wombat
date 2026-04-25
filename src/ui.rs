@@ -48,7 +48,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     window.add_action(&show_credits_action);
 
     let menu = gio::Menu::new();
-    menu.append(Some("Credits"), Some("win.show-credits"));
+    menu.append(Some("About"), Some("win.show-credits"));
     menu.append(Some("Reset Session"), Some("win.reset-session"));
     menu.append(Some("Clear Inputs"), Some("win.clear-history"));
     menu.append(Some("Quit"), Some("app.quit"));

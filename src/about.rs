@@ -16,7 +16,7 @@ pub fn build_about_dialog(_parent: &adw::ApplicationWindow) -> adw::AboutDialog 
         .developers(["Archisman Panigrahi https://github.com/archisman-panigrahi"])
         .artists(["Gemini AI and Archisman Panigrahi"])
         .designers(["Archisman Panigrahi https://github.com/archisman-panigrahi"])
-        .comments("Graphical scientific calculator and unit converter based on Numbat programming language.")
+        .comments("High-precision scientific calculator with full support for physical units, powered by Numbat programming language.")
         .version(env!("CARGO_PKG_VERSION"))
         .license_type(gtk::License::MitX11)
         .website(WEBSITE)

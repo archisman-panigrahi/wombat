@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.github.archisman_panigrahi.wombat</id>
   <name>Wombat</name>
-  <summary>Effortless unit conversion for scientific computing</summary>
+  <summary>High-precision scientific calculator with full unit support, powered by Numbat</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
   <developer id="io.github.archisman_panigrahi">
@@ -10,8 +10,9 @@
   </developer>
   <description>
     <p>
-      Wombat gives Numbat a friendly face. It’s a graphical environment for unit-aware scientific computing where conversions just work—no more juggling factors or second-guessing results.
-      Type expressions naturally, mix units freely, and let Wombat handle the rest. It keeps your calculations consistent, your units correct, and your workflow smooth.
+      Wombat gives Numbat a friendly face: a high-precision graphical calculator built for scientists and engineers.
+      Designed for unit-aware scientific computing, conversions just work—no need to juggle factors or second-guess results.
+      Type expressions naturally, mix units freely, and let Wombat keep your calculations consistent, your units correct, and your workflow smooth.
     </p>
   </description>
   <launchable type="desktop-id">io.github.archisman_panigrahi.wombat.desktop</launchable>

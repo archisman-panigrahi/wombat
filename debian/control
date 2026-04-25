@@ -17,7 +17,7 @@ Homepage: https://github.com/archisman-panigrahi/wombat
 Package: wombat
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Description: Graphical scientific calculator and unit converter based on Numbat programming language
+Description: High-precision scientific calculator with full unit support, powered by Numbat.
  Wombat is a desktop front-end for the Numbat language that keeps a live
  interpreter session in memory and shows the full output history in a
  scrollable log.

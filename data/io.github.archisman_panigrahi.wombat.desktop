@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Wombat
-Comment=Effortless unit conversion for scientific computing
+Comment=High-precision scientific calculator with full unit support, powered by Numbat
 Exec=wombat
 Icon=io.github.archisman_panigrahi.wombat
 Terminal=false
