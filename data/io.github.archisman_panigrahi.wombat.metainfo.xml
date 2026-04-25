@@ -27,6 +27,7 @@
   <screenshots>
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/main/data/screenshots/wombat.png</image>
+      <caption>Main Window</caption>
     </screenshot>
   </screenshots>
   <content_rating type="oars-1.1" />
