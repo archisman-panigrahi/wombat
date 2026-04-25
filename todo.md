@@ -1,8 +1,9 @@
 ## Todo
 
-- Mobile support for GNU/Linux
-- Debian package (figure out how numbat is used and whether we can reuse numbat from debian repo) --- most likely done
-- buttons for common fundamental constants (configurable buttons)
+- Mobile support for GNU/Linux with libadwaita (need to make the design more responsive)
+- Build flatpak (already builds locally, need to publish to Flathub/GitHub actions)
+- Debian package (code is ready, needs testing in Ubuntu 26.04 with latest libadwaita)
+- ~~buttons for common fundamental constants (configurable buttons)~~
 - Close button in about dialog and a proper about dialog (details, report an issue, credits).
 - Better theme, as in https://github.com/htkhiem/euphonica
 - Export and import notebooks (with variables)

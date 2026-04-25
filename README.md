@@ -1,10 +1,10 @@
-<img src="data/io.github.archisman_panigrahi.wombat.png"  alt="Blanket" width="128" height="128" align="left"/>
+<img src="data/io.github.archisman_panigrahi.wombat.png"  alt="Blanket" width="64" height="64" align="left"/>
 
 # Wombat
 
-![wombat](screenshot/wombat.png)
-
 Wombat is a scientific calculator using [Numbat](https://github.com/sharkdp/numbat) programming language. It keeps a live Numbat interpreter session in memory and shows the full output history in a scrollable log. It uses GTK4+libadwaita.
+
+![wombat](screenshot/wombat.png)
 
 ## What Works Now
 
