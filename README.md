@@ -9,7 +9,7 @@ Wombat is a scientific calculator using [Numbat](https://github.com/sharkdp/numb
 ## What Works Now
 
 - Expression evaluation through Numbat’s interpreter
-- Built-in REPL commands such as `help`, `list`, `info`, `clear`, `save`, `reset`, and `quit`
+- Built-in REPL commands such as `help`, `list`, `info`, `clear`, `reset`, and `quit`
 - A persistent scrollable history pane
 - A single input field for expressions and commands
 - Loading modules from Numbat’s built-in modules plus local module folders found at startup
