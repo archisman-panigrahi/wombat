@@ -2,10 +2,13 @@ name: Flatpak
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*.*.*"
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-flatpak:
@@ -20,10 +23,23 @@ jobs:
         with:
           ref: flatpak-build
 
+      - name: Set version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Build Flatpak bundle
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           manifest-path: io.github.archisman_panigrahi.wombat.json
-          bundle: wombat.flatpak
+          bundle: wombat-${{ steps.version.outputs.version }}.flatpak
           cache-key: flatpak-builder-${{ github.sha }}
           upload-artifact: true
+
+      - name: Create GitHub Release and upload Flatpak
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Wombat ${{ steps.version.outputs.version }}
+          files: wombat-${{ steps.version.outputs.version }}.flatpak
