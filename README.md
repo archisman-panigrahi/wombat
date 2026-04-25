@@ -69,7 +69,6 @@ You can test entirely from terminal in two ways.
 If your host has compatible GTK/libadwaita dev packages:
 
 ```bash
-source "$HOME/.cargo/env"
 cargo run
 ```
 
