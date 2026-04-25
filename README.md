@@ -6,16 +6,6 @@ Wombat is a scientific calculator using [Numbat](https://github.com/sharkdp/numb
 
 ![wombat](data/screenshots/wombat.png)
 
-## What Works Now
-
-- Expression evaluation through Numbat’s interpreter
-- Built-in REPL commands such as `help`, `list`, `info`, `clear`, `reset`, and `quit`
-- A persistent scrollable history pane
-- A single input field for expressions and commands
-- Loading modules from Numbat’s built-in modules plus local module folders found at startup
-
-The module-management GUI itself is intentionally left for a later iteration, but the app is already wired so external module paths can be discovered from the environment and the standard user/system folders.
-
 ## Planned features
 
 See [Planned features](./todo.md).
@@ -41,7 +31,10 @@ Published on the Flathub app store:
 
 Here is [how to set up Flathub](https://flathub.org/en/setup) on your distro so that you can install this app.
 
-## Build Requirements
+
+---
+
+## How to build from source?
 
 You need:
 
@@ -168,14 +161,3 @@ Example:
 export NUMBAT_MODULES_PATH="$HOME/.config/numbat/modules:/opt/numbat/modules"
 cargo run
 ```
-
-## Repository Layout
-
-- `Cargo.toml` - Rust package metadata and dependencies
-- `debian/` - Debian packaging metadata and build rules
-- `src/main.rs` - GTK window, Numbat session handling, and UI logic
-- `README.md` - Setup and usage notes
-- `io.github.archisman_panigrahi.wombat.json` - Flatpak manifest for GNOME Builder / Flatpak builds
-- `data/io.github.archisman_panigrahi.wombat.desktop` - Desktop entry
-- `data/io.github.archisman_panigrahi.wombat.metainfo.xml` - AppStream metadata
-- `data/io.github.archisman_panigrahi.wombat.svg` - App icon
