@@ -3,6 +3,7 @@ name = "wombat"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+build = "build.rs"
 
 [dependencies]
 adw = { package = "libadwaita", version = "0.9", features = ["v1_9"] }

@@ -61,7 +61,8 @@ pub fn set_startup_message(
     history_buffer.insert(&mut end_iter, "\n");
     history_buffer.insert(&mut end_iter, "Wombat v");
     history_buffer.insert(&mut end_iter, env!("CARGO_PKG_VERSION"));
-    history_buffer.insert(&mut end_iter, " | Numbat v1.23.0");
+    history_buffer.insert(&mut end_iter, ", powered by Numbat v");
+    history_buffer.insert(&mut end_iter, env!("NUMBAT_VERSION"));
     history_buffer.insert(&mut end_iter, "\n\nType ");
     insert_colored_input(history_buffer, &mut end_iter, "help");
     history_buffer.insert(&mut end_iter, ", ");
