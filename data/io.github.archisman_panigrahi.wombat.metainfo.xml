@@ -88,8 +88,18 @@
     </screenshot>
 
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/63b5e2d93a1f790e2883ce2a93a53525770071ae/data/screenshots/wombat.png</image>
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/edec29250f2f543eb4c4c90303746999d9cce942/data/screenshots/wombat_suggestions.png</image>
       <caption>Wombat suggestion bar</caption>
+    </screenshot>
+
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/edec29250f2f543eb4c4c90303746999d9cce942/data/screenshots/wombat_keyboard_shortcuts.png</image>
+      <caption>Keyboard shortcuts in Wombat</caption>
+    </screenshot>
+
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/edec29250f2f543eb4c4c90303746999d9cce942/data/screenshots/wombat_options_pane.png</image>
+      <caption>Wombat options panel</caption>
     </screenshot>
   </screenshots>
 
