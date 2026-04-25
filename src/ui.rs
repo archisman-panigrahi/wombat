@@ -5,11 +5,19 @@ use adw::prelude::*;
 use gtk::gio;
 
 use crate::about::build_about_dialog;
-use crate::output::{append_history, ensure_numbat_tags};
-use crate::session::{NumbatSession, OutputEvent};
+use crate::output::{append_history, ensure_numbat_tags, set_startup_message};
+use crate::session::NumbatSession;
 
 const HISTORY_MARGIN: i32 = 8;
 const INPUT_MARGIN: i32 = 12;
+const STARTUP_BANNER: &str = 
+r#" 
+██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
+██║    ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝
+██║ █╗ ██║██║   ██║██╔████╔██║██████╔╝███████║   ██║   
+██║███╗██║██║   ██║██║╚██╔╝██║██╔══██╗██╔══██║   ██║   
+╚███╔███╔╝╚██████╔╝██║ ╚═╝ ██║██████╔╝██║  ██║   ██║   
+ ╚══╝╚══╝  ╚═════╝ ╚═╝     ╚═╝╚═════╝ ╚═╝  ╚═╝   ╚═╝"#;
 
 pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     let session = Rc::new(RefCell::new(NumbatSession::new()));
@@ -41,6 +49,8 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     let menu = gio::Menu::new();
     menu.append(Some("Credits"), Some("win.show-credits"));
+    menu.append(Some("Reset Session"), Some("win.reset-session"));
+    menu.append(Some("Clear History"), Some("win.clear-history"));
     menu.append(Some("Quit"), Some("app.quit"));
 
     let menu_button = gtk::MenuButton::builder()
@@ -93,6 +103,39 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     input_row.append(&input_entry);
     input_row.append(&run_button);
 
+    // Physics constants buttons
+    let constants_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    constants_row.set_margin_top(8);
+    constants_row.set_margin_bottom(8);
+    constants_row.set_halign(gtk::Align::Center);
+    
+    let constants: &[(&str, &str)] = &[
+        ("ℏ", "h_bar"),
+        ("k_B", "boltzmann_constant"),
+        ("𝜋", "pi"),
+        ("c", "speed_of_light"),
+        ("G", "gravitational_constant"),
+        ("e", "elementary_charge"),
+        ("m_e", "electron_mass"),
+        ("𝛼", "fine_structure_constant"),
+        ("ε₀", "eps0"),
+        ("μ₀", "magnetic_constant"),
+        ("μ_B", "bohr_magneton"),
+    ];
+
+    for (label, constant_name) in constants {
+        let btn = gtk::Button::with_label(label);
+        btn.set_tooltip_text(Some(constant_name));
+        let entry_clone = input_entry.clone();
+        let const_name = constant_name.to_string();
+        btn.connect_clicked(move |_| {
+            let current = entry_clone.text().to_string();
+            let separator = if current.is_empty() { "" } else { " " };
+            entry_clone.set_text(&format!("{}{}{}", current, separator, const_name));
+        });
+        constants_row.append(&btn);
+    }
+
     let status_label = gtk::Label::new(Some(
         "Ready. Commands like help, list, clear, save, reset, and quit work here too.",
     ));
@@ -102,6 +145,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     root.append(&history_scroller);
     root.append(&input_label);
     root.append(&input_row);
+    root.append(&constants_row);
     root.append(&status_label);
 
     let calculator_clamp = adw::Clamp::new();
@@ -116,6 +160,89 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     let toast_overlay = adw::ToastOverlay::new();
     toast_overlay.set_child(Some(&shell));
     window.set_content(Some(&toast_overlay));
+
+    // Now add the reset and clear actions after history_buffer is created
+    let reset_session_action = gio::SimpleAction::new("reset-session", None);
+    {
+        let window = window.clone();
+        let session = Rc::clone(&session);
+        let history_buffer = history_buffer.clone();
+        reset_session_action.connect_activate(move |_, _| {
+            let dialog = gtk::Dialog::builder()
+                .title("Reset Session?")
+                .modal(true)
+                .transient_for(&window)
+                .build();
+            
+            let content_area = dialog.content_area();
+            let label = gtk::Label::new(Some("This will clear all variables and start fresh."));
+            label.set_wrap(true);
+            label.set_margin_top(12);
+            label.set_margin_bottom(12);
+            label.set_margin_start(12);
+            label.set_margin_end(12);
+            content_area.append(&label);
+
+            dialog.add_button("No", gtk::ResponseType::Cancel);
+            dialog.add_button("Yes", gtk::ResponseType::Accept);
+            dialog.set_default_response(gtk::ResponseType::Cancel);
+
+            let session = Rc::clone(&session);
+            let history_buffer = history_buffer.clone();
+            dialog.connect_response(move |dialog, response_id| {
+                if response_id == gtk::ResponseType::Accept {
+                    // Reset session by creating a new one
+                    *session.borrow_mut() = NumbatSession::new();
+                    // Clear history display
+                    history_buffer.set_text("");
+                }
+                dialog.close();
+            });
+
+            dialog.present();
+        });
+    }
+    window.add_action(&reset_session_action);
+
+    let clear_history_action = gio::SimpleAction::new("clear-history", None);
+    {
+        let window = window.clone();
+        let history_buffer = history_buffer.clone();
+        let command_history = Rc::clone(&command_history);
+        clear_history_action.connect_activate(move |_, _| {
+            let dialog = gtk::Dialog::builder()
+                .title("Clear History?")
+                .modal(true)
+                .transient_for(&window)
+                .build();
+            
+            let content_area = dialog.content_area();
+            let label = gtk::Label::new(Some("This will remove all commands from the history."));
+            label.set_wrap(true);
+            label.set_margin_top(12);
+            label.set_margin_bottom(12);
+            label.set_margin_start(12);
+            label.set_margin_end(12);
+            content_area.append(&label);
+
+            dialog.add_button("No", gtk::ResponseType::Cancel);
+            dialog.add_button("Yes", gtk::ResponseType::Accept);
+            dialog.set_default_response(gtk::ResponseType::Cancel);
+
+            let history_buffer = history_buffer.clone();
+            let command_history = Rc::clone(&command_history);
+            dialog.connect_response(move |dialog, response_id| {
+                if response_id == gtk::ResponseType::Accept {
+                    history_buffer.set_text("");
+                    command_history.borrow_mut().clear();
+                }
+                dialog.close();
+            });
+
+            dialog.present();
+        });
+    }
+    window.add_action(&clear_history_action);
 
     let submit = Rc::new({
         let session = Rc::clone(&session);
@@ -237,14 +364,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         input_entry.add_controller(key_controller);
     }
 
-    append_history(
-        &history_buffer,
-        &history_view,
-        "welcome",
-        &[OutputEvent::Plain(
-            "Wombat is ready. Try `help`, `list`, or `2 m + 30 cm`.".to_string(),
-        )],
-    );
+    set_startup_message(&history_buffer, &history_view, STARTUP_BANNER);
 
     window
 }

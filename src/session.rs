@@ -130,14 +130,14 @@ impl NumbatSession {
                 if let Err(error_text) = evaluation_result {
                     self.output.push_text(&error_text);
                     is_error = true;
-                    status = Some("Evaluation failed");
+                    // status = Some("Evaluation failed");
                 }
             }
             CommandControlFlow::Continue => {
                 if self.clear_requested.get() {
                     status = Some("History cleared");
                 } else if !self.output.is_empty() {
-                    status = Some("Command executed");
+                    // status = Some("Command executed");
                 }
             }
             CommandControlFlow::Reset => {
