@@ -10,6 +10,7 @@ use crate::session::NumbatSession;
 
 const HISTORY_MARGIN: i32 = 8;
 const INPUT_MARGIN: i32 = 12;
+const NUMBAT_SYNTAX_URL: &str = "https://numbat.dev/docs/examples/example-numbat_syntax/";
 const STARTUP_BANNER: &str = 
 r#" 
 ██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
@@ -47,8 +48,20 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
     window.add_action(&show_credits_action);
 
+    let open_numbat_syntax_action = gio::SimpleAction::new("open-numbat-syntax", None);
+    open_numbat_syntax_action.connect_activate(move |_, _| {
+        if let Err(err) = gio::AppInfo::launch_default_for_uri(
+            NUMBAT_SYNTAX_URL,
+            None::<&gio::AppLaunchContext>,
+        ) {
+            eprintln!("Failed to open Numbat syntax docs: {err}");
+        }
+    });
+    window.add_action(&open_numbat_syntax_action);
+
     let menu = gio::Menu::new();
     menu.append(Some("About"), Some("win.show-credits"));
+    menu.append(Some("View Numbat Syntax"), Some("win.open-numbat-syntax"));
     menu.append(Some("Reset Session"), Some("win.reset-session"));
     menu.append(Some("Clear Inputs"), Some("win.clear-history"));
     menu.append(Some("Quit"), Some("app.quit"));
