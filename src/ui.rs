@@ -48,7 +48,9 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     overlay_split_view.set_max_sidebar_width(320.0);
     let toast_overlay = adw::ToastOverlay::new();
 
-    let sidebar_toggle_button = gtk::Button::with_label("Options");
+    let sidebar_toggle_button = gtk::Button::new();
+    sidebar_toggle_button.set_icon_name("sidebar-show-right-symbolic");
+    sidebar_toggle_button.set_tooltip_text(Some("Toggle Options Panel"));
     {
         let overlay_split_view = overlay_split_view.clone();
         sidebar_toggle_button.connect_clicked(move |_| {
@@ -56,25 +58,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         });
     }
     header.pack_end(&sidebar_toggle_button);
-
-    let update_sidebar_toggle_label = {
-        let sidebar_toggle_button = sidebar_toggle_button.clone();
-        let overlay_split_view = overlay_split_view.clone();
-        Rc::new(move || {
-            if overlay_split_view.shows_sidebar() {
-                sidebar_toggle_button.set_label("Hide Options");
-            } else {
-                sidebar_toggle_button.set_label("Options");
-            }
-        })
-    };
-    update_sidebar_toggle_label();
-    {
-        let update_sidebar_toggle_label = Rc::clone(&update_sidebar_toggle_label);
-        overlay_split_view.connect_show_sidebar_notify(move |_| {
-            update_sidebar_toggle_label();
-        });
-    }
 
     let show_credits_action = gio::SimpleAction::new("show-credits", None);
     {
@@ -107,6 +90,19 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         }
     });
     window.add_action(&open_examples_action);
+
+    let toggle_fullscreen_action = gio::SimpleAction::new("toggle-fullscreen", None);
+    {
+        let window = window.clone();
+        toggle_fullscreen_action.connect_activate(move |_, _| {
+            if window.is_fullscreen() {
+                window.unfullscreen();
+            } else {
+                window.fullscreen();
+            }
+        });
+    }
+    window.add_action(&toggle_fullscreen_action);
 
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
     root.set_margin_top(HISTORY_MARGIN);
@@ -373,11 +369,20 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
     window.add_action(&open_numbat_list_action);
 
-    let make_sidebar_button = |label: &str, action: gio::SimpleAction| {
-        let button = gtk::Button::with_label(label);
+    let make_sidebar_button = |icon_name: &str, label: &str, action: gio::SimpleAction| {
+        let button = gtk::Button::new();
         button.set_hexpand(true);
         button.set_halign(gtk::Align::Fill);
         button.add_css_class("flat");
+
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+        let icon = gtk::Image::from_icon_name(icon_name);
+        let text = gtk::Label::new(Some(label));
+        text.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        text.set_halign(gtk::Align::Start);
+        row.append(&icon);
+        row.append(&text);
+        button.set_child(Some(&row));
 
         let overlay_split_view = overlay_split_view.clone();
         button.connect_clicked(move |_| {
@@ -390,76 +395,54 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         button
     };
 
-    let sidebar_panel = gtk::Box::new(gtk::Orientation::Vertical, 10);
-    sidebar_panel.set_margin_top(12);
-    sidebar_panel.set_margin_bottom(12);
-    sidebar_panel.set_margin_start(12);
-    sidebar_panel.set_margin_end(12);
+    let sidebar_panel = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    sidebar_panel.set_margin_top(6);
+    sidebar_panel.set_margin_bottom(6);
+    sidebar_panel.set_margin_start(6);
+    sidebar_panel.set_margin_end(6);
 
-    let sidebar_header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    let sidebar_title = gtk::Label::new(Some("Actions"));
-    sidebar_title.add_css_class("title-4");
-    sidebar_title.set_halign(gtk::Align::Start);
-    sidebar_title.set_hexpand(true);
-    sidebar_header.append(&sidebar_title);
-
-    let close_sidebar_button = gtk::Button::with_label("Close");
-    close_sidebar_button.add_css_class("flat");
-    {
-        let overlay_split_view = overlay_split_view.clone();
-        close_sidebar_button.connect_clicked(move |_| {
-            overlay_split_view.set_show_sidebar(false);
-        });
-    }
-    sidebar_header.append(&close_sidebar_button);
-    sidebar_panel.append(&sidebar_header);
-
-    let quick_help_label = gtk::Label::new(Some("Quick help"));
-    quick_help_label.add_css_class("heading");
-    quick_help_label.set_halign(gtk::Align::Start);
-    sidebar_panel.append(&quick_help_label);
-    sidebar_panel.append(&make_sidebar_button("Quick Syntax Help", open_numbat_help_action.clone()));
+    sidebar_panel.append(&make_sidebar_button("help-faq-symbolic", "Quick Syntax Help", open_numbat_help_action.clone()));
     sidebar_panel.append(&make_sidebar_button(
+        "view-list-symbolic",
         "List of Constants and Functions",
         open_numbat_list_action.clone(),
     ));
 
-    let docs_separator = gtk::Separator::new(gtk::Orientation::Horizontal);
-    sidebar_panel.append(&docs_separator);
+    sidebar_panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
 
-    let docs_label = gtk::Label::new(Some("Online docs"));
-    docs_label.add_css_class("heading");
-    docs_label.set_halign(gtk::Align::Start);
-    sidebar_panel.append(&docs_label);
     sidebar_panel.append(&make_sidebar_button(
+        "emblem-documents-symbolic",
         "Detailed Numbat Syntax",
         open_numbat_syntax_action.clone(),
     ));
-    sidebar_panel.append(&make_sidebar_button("Online Examples", open_examples_action.clone()));
+    sidebar_panel.append(&make_sidebar_button("globe-symbolic", "Online Examples", open_examples_action.clone()));
 
-    let session_separator = gtk::Separator::new(gtk::Orientation::Horizontal);
-    sidebar_panel.append(&session_separator);
+    sidebar_panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
 
-    let session_label = gtk::Label::new(Some("Session"));
-    session_label.add_css_class("heading");
-    session_label.set_halign(gtk::Align::Start);
-    sidebar_panel.append(&session_label);
-    sidebar_panel.append(&make_sidebar_button("Reset Session", reset_session_action.clone()));
-    sidebar_panel.append(&make_sidebar_button("Clear Inputs", clear_history_action.clone()));
+    sidebar_panel.append(&make_sidebar_button("view-refresh-symbolic", "Reset Session", reset_session_action.clone()));
+    sidebar_panel.append(&make_sidebar_button("edit-clear-all-symbolic", "Clear Inputs", clear_history_action.clone()));
 
-    let app_separator = gtk::Separator::new(gtk::Orientation::Horizontal);
-    sidebar_panel.append(&app_separator);
+    sidebar_panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
 
-    let app_label = gtk::Label::new(Some("App"));
-    app_label.add_css_class("heading");
-    app_label.set_halign(gtk::Align::Start);
-    sidebar_panel.append(&app_label);
-    sidebar_panel.append(&make_sidebar_button("About", show_credits_action.clone()));
+    sidebar_panel.append(&make_sidebar_button("help-about-symbolic", "About", show_credits_action.clone()));
     {
-        let button = gtk::Button::with_label("Fullscreen");
+        let button = gtk::Button::new();
         button.set_hexpand(true);
         button.set_halign(gtk::Align::Fill);
         button.add_css_class("flat");
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+        row.append(&gtk::Image::from_icon_name("view-fullscreen-symbolic"));
+        let text = gtk::Label::new(Some("Fullscreen"));
+        text.set_halign(gtk::Align::Start);
+        row.append(&text);
+        let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        spacer.set_hexpand(true);
+        row.append(&spacer);
+        let shortcut = gtk::Label::new(Some("F11"));
+        shortcut.add_css_class("dim-label");
+        shortcut.add_css_class("caption");
+        row.append(&shortcut);
+        button.set_child(Some(&row));
 
         let window = window.clone();
         let overlay_split_view = overlay_split_view.clone();
@@ -469,19 +452,30 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             } else {
                 window.fullscreen();
             }
-
             if overlay_split_view.is_collapsed() {
                 overlay_split_view.set_show_sidebar(false);
             }
         });
-
         sidebar_panel.append(&button);
     }
     {
-        let button = gtk::Button::with_label("Quit");
+        let button = gtk::Button::new();
         button.set_hexpand(true);
         button.set_halign(gtk::Align::Fill);
         button.add_css_class("flat");
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+        row.append(&gtk::Image::from_icon_name("application-exit-symbolic"));
+        let text = gtk::Label::new(Some("Quit"));
+        text.set_halign(gtk::Align::Start);
+        row.append(&text);
+        let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        spacer.set_hexpand(true);
+        row.append(&spacer);
+        let shortcut = gtk::Label::new(Some("Ctrl+Q"));
+        shortcut.add_css_class("dim-label");
+        shortcut.add_css_class("caption");
+        row.append(&shortcut);
+        button.set_child(Some(&row));
 
         let app = app.clone();
         let overlay_split_view = overlay_split_view.clone();
@@ -491,7 +485,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 overlay_split_view.set_show_sidebar(false);
             }
         });
-
         sidebar_panel.append(&button);
     }
 
@@ -501,9 +494,26 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .min_content_width(240)
         .child(&sidebar_panel)
         .build();
-    sidebar_scroller.add_css_class("card");
 
-    overlay_split_view.set_sidebar(Some(&sidebar_scroller));
+    let sidebar_header_bar = adw::HeaderBar::new();
+    sidebar_header_bar.set_show_end_title_buttons(false);
+    sidebar_header_bar.set_show_start_title_buttons(false);
+    let sidebar_title_widget = gtk::Label::new(Some("Options"));
+    sidebar_header_bar.set_title_widget(Some(&sidebar_title_widget));
+    let close_sidebar_button = gtk::Button::new();
+    close_sidebar_button.set_icon_name("window-close-symbolic");
+    {
+        let overlay_split_view = overlay_split_view.clone();
+        close_sidebar_button.connect_clicked(move |_| {
+            overlay_split_view.set_show_sidebar(false);
+        });
+    }
+    sidebar_header_bar.pack_end(&close_sidebar_button);
+
+    let sidebar_toolbar_view = adw::ToolbarView::new();
+    sidebar_toolbar_view.add_top_bar(&sidebar_header_bar);
+    sidebar_toolbar_view.set_content(Some(&sidebar_scroller));
+    overlay_split_view.set_sidebar(Some(&sidebar_toolbar_view));
 
     let submit = {
         let submit_input = Rc::clone(&submit_input);
@@ -684,14 +694,14 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     set_startup_message(&history_buffer, &history_view, STARTUP_BANNER);
 
-    overlay_split_view.set_content(Some(&calculator_clamp));
+    let content_toolbar_view = adw::ToolbarView::new();
+    content_toolbar_view.add_top_bar(&header);
+    content_toolbar_view.set_content(Some(&calculator_clamp));
+
+    overlay_split_view.set_content(Some(&content_toolbar_view));
     overlay_split_view.set_show_sidebar(false);
 
-    let shell = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    shell.append(&header);
-    shell.append(&overlay_split_view);
-
-    toast_overlay.set_child(Some(&shell));
+    toast_overlay.set_child(Some(&overlay_split_view));
     window.set_content(Some(&toast_overlay));
 
     window

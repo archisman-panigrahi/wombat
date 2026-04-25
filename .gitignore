@@ -15,3 +15,7 @@ Cargo.lock
 
 ## flatpak
 .flatpak-builder/
+
+## agents
+.claude/
+.codex

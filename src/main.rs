@@ -19,6 +19,7 @@ fn main() {
     }
     app.add_action(&quit_action);
     app.set_accels_for_action("app.quit", &["<Primary>q"]);
+    app.set_accels_for_action("win.toggle-fullscreen", &["F11"]);
 
     app.connect_activate(|app| {
         let window = ui::build_window(app);
