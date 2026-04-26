@@ -16,8 +16,6 @@ const NUMBAT_SYNTAX_URL: &str = "https://numbat.dev/docs/examples/example-numbat
 const NUMBAT_EXAMPLES_URL: &str = "https://numbat.dev/docs/basics/conversions/";
 const SIDEBAR_DESKTOP_MAX_WIDTH: f64 = 280.0;
 const SIDEBAR_MOBILE_MAX_WIDTH: f64 = 280.0;
-const SETTINGS_SCHEMA_ID: &str = "io.github.archisman_panigrahi.wombat";
-const SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP: &str = "show-operator-buttons-desktop";
 const OPERATOR_BUTTONS_DESKTOP_PREF_FILE: &str = "operator-buttons-desktop.conf";
 const CUSTOM_DEFINITIONS_PREF_FILE: &str = "custom-definitions.nbt";
 const COMPLETION_ROW_HEIGHT: i32 = 40;
@@ -128,10 +126,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
     window.add_action(&show_keyboard_shortcuts_action);
     app.set_accels_for_action("win.show-keyboard-shortcuts", &["<Control>question"]);
-
-    let settings = gio::SettingsSchemaSource::default()
-        .and_then(|source| source.lookup(SETTINGS_SCHEMA_ID, true))
-        .map(|_| gio::Settings::new(SETTINGS_SCHEMA_ID));
 
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
     root.set_margin_top(HISTORY_MARGIN);
@@ -288,8 +282,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     root.append(&operators_revealer);
     root.append(&constants_row);
 
-    let desktop_operator_buttons_visible =
-        Rc::new(Cell::new(load_operator_buttons_pref(&settings)));
+    let desktop_operator_buttons_visible = Rc::new(Cell::new(load_operator_buttons_pref()));
     let operator_visibility_switch = gtk::Switch::builder()
         .active(desktop_operator_buttons_visible.get())
         .valign(gtk::Align::Center)
@@ -310,12 +303,11 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     {
         let overlay_split_view = overlay_split_view.clone();
         let desktop_operator_buttons_visible = Rc::clone(&desktop_operator_buttons_visible);
-        let settings = settings.clone();
         let sync_operator_buttons = Rc::clone(&sync_operator_buttons);
         operator_visibility_switch.connect_active_notify(move |switch| {
             if !overlay_split_view.is_collapsed() {
                 desktop_operator_buttons_visible.set(switch.is_active());
-                save_operator_buttons_pref(&settings, switch.is_active());
+                save_operator_buttons_pref(switch.is_active());
             }
             sync_operator_buttons();
         });
@@ -1220,24 +1212,12 @@ fn previous_index(index: usize, button_count: usize) -> usize {
     }
 }
 
-fn load_operator_buttons_pref(settings: &Option<gio::Settings>) -> bool {
-    settings
-        .as_ref()
-        .map(|settings| settings.boolean(SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP))
-        .unwrap_or_else(|| load_bool_pref(pref_path(), false))
+fn load_operator_buttons_pref() -> bool {
+    load_bool_pref(pref_path(), false)
 }
 
-fn save_operator_buttons_pref(settings: &Option<gio::Settings>, value: bool) {
-    if let Some(settings) = settings {
-        if let Err(err) = settings.set_boolean(SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP, value) {
-            eprintln!(
-                "Failed to persist setting {SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP}: {err}"
-            );
-            save_bool_pref(pref_path(), value);
-        }
-    } else {
-        save_bool_pref(pref_path(), value);
-    }
+fn save_operator_buttons_pref(value: bool) {
+    save_bool_pref(pref_path(), value);
 }
 
 fn pref_path() -> PathBuf {

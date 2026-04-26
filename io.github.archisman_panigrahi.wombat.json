@@ -29,9 +29,7 @@
         "install -Dm755 target/release/wombat /app/bin/wombat",
         "install -Dm644 data/io.github.archisman_panigrahi.wombat.desktop /app/share/applications/io.github.archisman_panigrahi.wombat.desktop",
         "install -Dm644 data/io.github.archisman_panigrahi.wombat.metainfo.xml /app/share/metainfo/io.github.archisman_panigrahi.wombat.metainfo.xml",
-        "install -Dm644 data/io.github.archisman_panigrahi.wombat.png /app/share/icons/hicolor/512x512/apps/io.github.archisman_panigrahi.wombat.png",
-        "install -Dm644 data/io.github.archisman_panigrahi.wombat.gschema.xml /app/share/glib-2.0/schemas/io.github.archisman_panigrahi.wombat.gschema.xml",
-        "glib-compile-schemas /app/share/glib-2.0/schemas"
+        "install -Dm644 data/io.github.archisman_panigrahi.wombat.png /app/share/icons/hicolor/512x512/apps/io.github.archisman_panigrahi.wombat.png"
       ],
       "sources": [
         {
