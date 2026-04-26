@@ -62,12 +62,22 @@ pub struct NumbatSession {
     command_runner: CommandRunner<'static, ()>,
     output: SharedOutput,
     clear_requested: Rc<Cell<bool>>,
+    custom_code: String,
 }
 
 impl NumbatSession {
+    #[allow(dead_code)]
     pub fn new() -> Self {
+        Self::new_with_custom_code("")
+    }
+
+    pub fn new_with_custom_code(custom_code: &str) -> Self {
         let module_paths = configured_module_paths();
-        let context = make_context(&module_paths);
+        let mut context = make_context(&module_paths);
+        let custom_code = custom_code.to_string();
+        if let Err(error) = apply_custom_code_to_context(&mut context, &custom_code) {
+            eprintln!("Failed to load custom definitions: {error}");
+        }
         let output = SharedOutput::new();
         let clear_requested = Rc::new(Cell::new(false));
 
@@ -89,6 +99,7 @@ impl NumbatSession {
             command_runner,
             output,
             clear_requested,
+            custom_code,
         }
     }
 
@@ -178,6 +189,18 @@ impl NumbatSession {
 
     fn reset_context(&mut self) {
         self.context = make_context(&self.module_paths);
+        if let Err(error) = apply_custom_code_to_context(&mut self.context, &self.custom_code) {
+            self.output
+                .push_text(&format!("Failed to load custom definitions: {error}"));
+        }
+    }
+
+    pub fn set_custom_code(&mut self, custom_code: &str) -> Result<(), String> {
+        let mut context = make_context(&self.module_paths);
+        apply_custom_code_to_context(&mut context, custom_code)?;
+        self.context = context;
+        self.custom_code = custom_code.to_string();
+        Ok(())
     }
 
     fn evaluate_expression(&mut self, input: &str) -> Result<(), String> {
@@ -264,4 +287,16 @@ fn make_context(module_paths: &[PathBuf]) -> Context {
 
     let _ = context.interpret("use prelude", CodeSource::Internal);
     context
+}
+
+fn apply_custom_code_to_context(context: &mut Context, custom_code: &str) -> Result<(), String> {
+    let custom_code = custom_code.trim();
+    if custom_code.is_empty() {
+        return Ok(());
+    }
+
+    context
+        .interpret(custom_code, CodeSource::Text)
+        .map(|_| ())
+        .map_err(|error| error.to_string())
 }

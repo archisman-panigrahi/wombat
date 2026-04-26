@@ -19,11 +19,16 @@ const SIDEBAR_MOBILE_MAX_WIDTH: f64 = 280.0;
 const SETTINGS_SCHEMA_ID: &str = "io.github.archisman_panigrahi.wombat";
 const SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP: &str = "show-operator-buttons-desktop";
 const OPERATOR_BUTTONS_DESKTOP_PREF_FILE: &str = "operator-buttons-desktop.conf";
+const CUSTOM_DEFINITIONS_PREF_FILE: &str = "custom-definitions.nbt";
 const COMPLETION_ROW_HEIGHT: i32 = 40;
 const COMPLETION_VISIBLE_ROWS: i32 = 3;
 const COMPLETION_MIN_CHIP_WIDTH: i32 = 96;
 const READY_STATUS: &str = "Ready when you are!";
 const SUGGESTIONS_STATUS: &str = "Suggested (press Tab for quick access).";
+const CUSTOM_DEFINITIONS_PLACEHOLDER: &str = "# Examples:
+let my_const = 42
+unit foot_inch = foot + inch
+fn double(x) = 2 * x";
 const STARTUP_BANNER_LARGE: &str = r#"
  ██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
  ██║    ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝
@@ -41,7 +46,11 @@ const STARTUP_BANNER_SMALL: &str = r#"
 const BANNER_SWITCH_WIDTH: i32 = 500;
 
 pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
-    let session = Rc::new(RefCell::new(NumbatSession::new()));
+    let custom_definitions_text = load_custom_definitions();
+    let session = Rc::new(RefCell::new(NumbatSession::new_with_custom_code(
+        &custom_definitions_text,
+    )));
+    let custom_definitions = Rc::new(RefCell::new(custom_definitions_text));
     let command_history: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
     let history_cursor: Rc<RefCell<Option<usize>>> = Rc::new(RefCell::new(None));
     let draft_input: Rc<RefCell<String>> = Rc::new(RefCell::new(String::new()));
@@ -348,6 +357,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     {
         let window = window.clone();
         let session = Rc::clone(&session);
+        let custom_definitions = Rc::clone(&custom_definitions);
         let history_buffer = history_buffer.clone();
         reset_session_action.connect_activate(move |_, _| {
             let dialog = adw::AlertDialog::new(
@@ -361,10 +371,12 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             dialog.set_close_response("cancel");
 
             let session = Rc::clone(&session);
+            let custom_definitions = Rc::clone(&custom_definitions);
             let history_buffer = history_buffer.clone();
             dialog.connect_response(None, move |_, response| {
                 if response == "reset" {
-                    *session.borrow_mut() = NumbatSession::new();
+                    *session.borrow_mut() =
+                        NumbatSession::new_with_custom_code(&custom_definitions.borrow());
                     history_buffer.set_text("");
                 }
             });
@@ -477,6 +489,25 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
     window.add_action(&open_numbat_list_action);
 
+    let edit_custom_definitions_action = gio::SimpleAction::new("edit-custom-definitions", None);
+    {
+        let window = window.clone();
+        let session = Rc::clone(&session);
+        let custom_definitions = Rc::clone(&custom_definitions);
+        let status_label = status_label.clone();
+        let toast_overlay = toast_overlay.clone();
+        edit_custom_definitions_action.connect_activate(move |_, _| {
+            show_custom_definitions_dialog(
+                &window,
+                Rc::clone(&session),
+                Rc::clone(&custom_definitions),
+                &status_label,
+                &toast_overlay,
+            );
+        });
+    }
+    window.add_action(&edit_custom_definitions_action);
+
     let sidebar_buttons: Rc<RefCell<Vec<gtk::Button>>> = Rc::new(RefCell::new(Vec::new()));
 
     let make_sidebar_button = {
@@ -526,6 +557,11 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         "view-list-symbolic",
         "List of Constants",
         open_numbat_list_action.clone(),
+    ));
+    sidebar_panel.append(&make_sidebar_button(
+        "document-edit-symbolic",
+        "Custom Definitions",
+        edit_custom_definitions_action.clone(),
     ));
 
     sidebar_panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
@@ -979,6 +1015,115 @@ fn completion_prefix_start(text: &str, cursor: usize) -> usize {
     prefix_start
 }
 
+fn show_custom_definitions_dialog(
+    window: &adw::ApplicationWindow,
+    session: Rc<RefCell<NumbatSession>>,
+    custom_definitions: Rc<RefCell<String>>,
+    status_label: &gtk::Label,
+    toast_overlay: &adw::ToastOverlay,
+) {
+    let dialog = adw::AlertDialog::new(
+        Some("Custom Definitions"),
+        Some("Define custom variables, units, and functions. This code runs when Wombat starts and after session resets."),
+    );
+    dialog.add_response("cancel", "Cancel");
+    dialog.add_response("save", "Save");
+    dialog.set_default_response(Some("save"));
+    dialog.set_close_response("cancel");
+    dialog.set_response_appearance("save", adw::ResponseAppearance::Suggested);
+
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    content.set_spacing(12);
+    content.set_margin_top(12);
+    content.set_margin_bottom(12);
+    content.set_margin_start(12);
+    content.set_margin_end(12);
+
+    let editor_buffer = gtk::TextBuffer::new(None);
+    editor_buffer.set_text(&custom_definitions.borrow());
+
+    let editor = gtk::TextView::builder()
+        .buffer(&editor_buffer)
+        .monospace(true)
+        .wrap_mode(gtk::WrapMode::WordChar)
+        .vexpand(true)
+        .hexpand(true)
+        .build();
+
+    let placeholder = gtk::Label::new(Some(CUSTOM_DEFINITIONS_PLACEHOLDER));
+    placeholder.add_css_class("dim-label");
+    placeholder.set_halign(gtk::Align::Start);
+    placeholder.set_valign(gtk::Align::Start);
+    placeholder.set_margin_top(10);
+    placeholder.set_margin_start(10);
+    placeholder.set_wrap(true);
+    placeholder.set_selectable(false);
+    placeholder.set_can_target(false);
+    placeholder.set_visible(buffer_text(&editor_buffer).trim().is_empty());
+    {
+        let placeholder = placeholder.clone();
+        editor_buffer.connect_changed(move |buffer| {
+            placeholder.set_visible(buffer_text(buffer).trim().is_empty());
+        });
+    }
+
+    let editor_scroller = gtk::ScrolledWindow::builder()
+        .min_content_height(220)
+        .hscrollbar_policy(gtk::PolicyType::Automatic)
+        .vscrollbar_policy(gtk::PolicyType::Automatic)
+        .child(&editor)
+        .build();
+    editor_scroller.add_css_class("card");
+
+    let editor_overlay = gtk::Overlay::new();
+    editor_overlay.set_child(Some(&editor_scroller));
+    editor_overlay.add_overlay(&placeholder);
+    content.append(&editor_overlay);
+
+    let error_label = gtk::Label::new(None);
+    error_label.add_css_class("error");
+    error_label.set_halign(gtk::Align::Start);
+    error_label.set_wrap(true);
+    error_label.set_visible(false);
+    content.append(&error_label);
+    dialog.set_extra_child(Some(&content));
+
+    {
+        let session = Rc::clone(&session);
+        let custom_definitions = Rc::clone(&custom_definitions);
+        let status_label = status_label.clone();
+        let toast_overlay = toast_overlay.clone();
+        dialog.connect_response(None, move |dialog, response| {
+            if response != "save" {
+                return;
+            }
+
+            let new_code = buffer_text(&editor_buffer);
+            match session.borrow_mut().set_custom_code(&new_code) {
+                Ok(()) => {
+                    save_custom_definitions(&new_code);
+                    *custom_definitions.borrow_mut() = new_code;
+                    status_label.set_text("Custom definitions saved.");
+                    toast_overlay.add_toast(adw::Toast::new("Custom definitions saved."));
+                    dialog.force_close();
+                }
+                Err(error) => {
+                    error_label.set_text(&error);
+                    error_label.set_visible(true);
+                }
+            }
+        });
+    }
+
+    dialog.present(Some(window));
+}
+
+fn buffer_text(buffer: &gtk::TextBuffer) -> String {
+    buffer
+        .text(&buffer.start_iter(), &buffer.end_iter(), true)
+        .to_string()
+}
+
 fn scroll_to_bottom_after_layout(scroller: &gtk::ScrolledWindow) {
     let scroller = scroller.clone();
     gtk::glib::idle_add_local_once(move || {
@@ -1099,6 +1244,29 @@ fn pref_path() -> PathBuf {
     gtk::glib::user_config_dir()
         .join("wombat")
         .join(OPERATOR_BUTTONS_DESKTOP_PREF_FILE)
+}
+
+fn custom_definitions_path() -> PathBuf {
+    gtk::glib::user_config_dir()
+        .join("wombat")
+        .join(CUSTOM_DEFINITIONS_PREF_FILE)
+}
+
+fn load_custom_definitions() -> String {
+    fs::read_to_string(custom_definitions_path()).unwrap_or_default()
+}
+
+fn save_custom_definitions(value: &str) {
+    let path = custom_definitions_path();
+    if let Some(parent) = path.parent() {
+        if let Err(err) = fs::create_dir_all(parent) {
+            eprintln!("Failed to create config directory for custom definitions: {err}");
+            return;
+        }
+    }
+    if let Err(err) = fs::write(path, value) {
+        eprintln!("Failed to save custom definitions: {err}");
+    }
 }
 
 fn load_bool_pref(path: PathBuf, default_value: bool) -> bool {
