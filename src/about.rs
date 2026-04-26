@@ -9,7 +9,7 @@ pub fn build_about_dialog() -> adw::AboutDialog {
         .developers(["Archisman Panigrahi https://github.com/archisman-panigrahi"])
         .artists(["Gemini AI and Archisman Panigrahi"])
         .designers(["Archisman Panigrahi https://github.com/archisman-panigrahi"])
-        .comments("High-precision scientific calculator with full support for physical units, powered by Numbat programming language.")
+        .comments("High-precision scientific calculator with full support for physical units, powered by Numbat programming language.\n")
         .version(env!("CARGO_PKG_VERSION"))
         .license_type(gtk::License::Gpl30)
         .website(WEBSITE)
@@ -27,13 +27,16 @@ pub fn build_about_dialog() -> adw::AboutDialog {
     dialog.add_credit_section(
         Some("Thanks"),
         &[
-            "David Peter for creating Numbat https://github.com/sharkdp",
-            "GitHub Copilot for assisting in development",
+            "David Peter for creating Numbat and Numbat-app https://github.com/sharkdp",
+            "Codex, Copilot and Claude for assisting in development",
         ],
     );
 
     dialog.add_link("Numbat", "https://numbat.dev");
-    dialog.add_link("Numbat-app", "https://github.com/sharkdp/numbat-app");
+    dialog.add_link(
+        "Numbat-app (for Android and iOS)",
+        "https://github.com/sharkdp/numbat-app",
+    );
 
     dialog
 }

@@ -280,6 +280,14 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     root.append(&completion_panel);
     root.append(&input_row);
     root.append(&operators_revealer);
+    let browser_shortcuts = gtk::FlowBox::new();
+    browser_shortcuts.set_margin_top(4);
+    browser_shortcuts.set_margin_bottom(4);
+    browser_shortcuts.set_halign(gtk::Align::Center);
+    browser_shortcuts.set_valign(gtk::Align::Start);
+    browser_shortcuts.set_selection_mode(gtk::SelectionMode::None);
+    browser_shortcuts.set_max_children_per_line(3);
+    root.append(&browser_shortcuts);
     root.append(&constants_row);
 
     let desktop_operator_buttons_visible = Rc::new(Cell::new(load_operator_buttons_pref()));
@@ -472,15 +480,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     }
     window.add_action(&open_numbat_help_action);
 
-    let open_numbat_list_action = gio::SimpleAction::new("open-numbat-list", None);
-    {
-        let submit_input = Rc::clone(&submit_input);
-        open_numbat_list_action.connect_activate(move |_, _| {
-            submit_input(String::from("list"));
-        });
-    }
-    window.add_action(&open_numbat_list_action);
-
     let edit_custom_definitions_action = gio::SimpleAction::new("edit-custom-definitions", None);
     {
         let window = window.clone();
@@ -499,6 +498,63 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         });
     }
     window.add_action(&edit_custom_definitions_action);
+
+    let open_units_browser_action = gio::SimpleAction::new("open-units-browser", None);
+    {
+        let window = window.clone();
+        let session = Rc::clone(&session);
+        let input_entry = input_entry.clone();
+        open_units_browser_action.connect_activate(move |_, _| {
+            show_units_browser(&window, Rc::clone(&session), &input_entry);
+        });
+    }
+    window.add_action(&open_units_browser_action);
+
+    let open_constants_browser_action = gio::SimpleAction::new("open-constants-browser", None);
+    {
+        let window = window.clone();
+        let session = Rc::clone(&session);
+        let input_entry = input_entry.clone();
+        open_constants_browser_action.connect_activate(move |_, _| {
+            show_constants_browser(&window, Rc::clone(&session), &input_entry);
+        });
+    }
+    window.add_action(&open_constants_browser_action);
+
+    let open_functions_browser_action = gio::SimpleAction::new("open-functions-browser", None);
+    {
+        let window = window.clone();
+        let session = Rc::clone(&session);
+        let input_entry = input_entry.clone();
+        open_functions_browser_action.connect_activate(move |_, _| {
+            show_functions_browser(&window, Rc::clone(&session), &input_entry);
+        });
+    }
+    window.add_action(&open_functions_browser_action);
+
+    for (icon_name, label, action) in [
+        (
+            "applications-science-symbolic",
+            "Units",
+            open_units_browser_action.clone(),
+        ),
+        (
+            "view-list-symbolic",
+            "Constants",
+            open_constants_browser_action.clone(),
+        ),
+        (
+            "format-text-code-symbolic",
+            "Functions",
+            open_functions_browser_action.clone(),
+        ),
+    ] {
+        let button = make_browser_shortcut_button(icon_name, label);
+        button.connect_clicked(move |_| {
+            action.activate(None);
+        });
+        browser_shortcuts.insert(&button, -1);
+    }
 
     let sidebar_buttons: Rc<RefCell<Vec<gtk::Button>>> = Rc::new(RefCell::new(Vec::new()));
 
@@ -546,9 +602,19 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         open_numbat_help_action.clone(),
     ));
     sidebar_panel.append(&make_sidebar_button(
+        "applications-science-symbolic",
+        "Units Browser",
+        open_units_browser_action.clone(),
+    ));
+    sidebar_panel.append(&make_sidebar_button(
         "view-list-symbolic",
-        "List of Constants",
-        open_numbat_list_action.clone(),
+        "Constants Browser",
+        open_constants_browser_action.clone(),
+    ));
+    sidebar_panel.append(&make_sidebar_button(
+        "format-text-code-symbolic",
+        "Functions Browser",
+        open_functions_browser_action.clone(),
     ));
     sidebar_panel.append(&make_sidebar_button(
         "document-edit-symbolic",
@@ -1007,6 +1073,210 @@ fn completion_prefix_start(text: &str, cursor: usize) -> usize {
     prefix_start
 }
 
+fn show_constants_browser(
+    window: &adw::ApplicationWindow,
+    session: Rc<RefCell<NumbatSession>>,
+    input_entry: &gtk::Entry,
+) {
+    let constants = session.borrow().constants();
+    let content = gtk::FlowBox::new();
+    content.set_margin_top(6);
+    content.set_margin_bottom(6);
+    content.set_margin_start(6);
+    content.set_margin_end(6);
+    content.set_column_spacing(6);
+    content.set_row_spacing(6);
+    content.set_selection_mode(gtk::SelectionMode::None);
+    content.set_max_children_per_line(6);
+
+    let dialog = browser_dialog("Constants Browser", &content);
+    for constant in constants {
+        let button = gtk::Button::with_label(&constant);
+        button.add_css_class("flat");
+        button.set_tooltip_text(Some(&constant));
+        let input_entry = input_entry.clone();
+        let dialog = dialog.clone();
+        button.connect_clicked(move |_| {
+            insert_entry_text(&input_entry, &constant);
+            dialog.force_close();
+        });
+        content.insert(&button, -1);
+    }
+    dialog.present(Some(window));
+}
+
+fn show_units_browser(
+    window: &adw::ApplicationWindow,
+    session: Rc<RefCell<NumbatSession>>,
+    input_entry: &gtk::Entry,
+) {
+    let groups = session.borrow().unit_groups();
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    content.set_margin_top(6);
+    content.set_margin_bottom(6);
+    content.set_margin_start(6);
+    content.set_margin_end(6);
+
+    let dialog = browser_dialog("Units Browser", &content);
+    for group in groups {
+        let expander = gtk::Expander::new(Some(&format!(
+            "{} ({})",
+            group.dimension,
+            group.units.len()
+        )));
+        expander.set_expanded(matches!(
+            group.dimension.as_str(),
+            "Length" | "Mass" | "Time" | "Temperature"
+        ));
+
+        let unit_grid = gtk::FlowBox::new();
+        unit_grid.set_margin_top(6);
+        unit_grid.set_margin_bottom(6);
+        unit_grid.set_column_spacing(6);
+        unit_grid.set_row_spacing(6);
+        unit_grid.set_selection_mode(gtk::SelectionMode::None);
+        unit_grid.set_max_children_per_line(5);
+
+        for unit in group.units {
+            let button = gtk::Button::with_label(&unit.display_name);
+            button.add_css_class("flat");
+            button.set_tooltip_text(Some(&unit.canonical_name));
+            let input_entry = input_entry.clone();
+            let dialog = dialog.clone();
+            button.connect_clicked(move |_| {
+                insert_entry_text(&input_entry, &unit.canonical_name);
+                dialog.force_close();
+            });
+            unit_grid.insert(&button, -1);
+        }
+
+        expander.set_child(Some(&unit_grid));
+        content.append(&expander);
+    }
+    dialog.present(Some(window));
+}
+
+fn show_functions_browser(
+    window: &adw::ApplicationWindow,
+    session: Rc<RefCell<NumbatSession>>,
+    input_entry: &gtk::Entry,
+) {
+    use std::collections::BTreeMap;
+
+    let mut groups: BTreeMap<String, Vec<_>> = BTreeMap::new();
+    for function in session.borrow().functions() {
+        groups
+            .entry(function.module.clone())
+            .or_default()
+            .push(function);
+    }
+
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    content.set_margin_top(6);
+    content.set_margin_bottom(6);
+    content.set_margin_start(6);
+    content.set_margin_end(6);
+
+    let dialog = browser_dialog("Functions Browser", &content);
+    for (module, functions) in groups {
+        let expander = gtk::Expander::new(Some(&format!("{} ({})", module, functions.len())));
+        expander.set_expanded(module == "User-defined" || module == "Internal");
+
+        let list = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        list.set_margin_top(6);
+        list.set_margin_bottom(6);
+
+        for function in functions {
+            let button = gtk::Button::new();
+            button.add_css_class("flat");
+            button.set_halign(gtk::Align::Fill);
+            button.set_hexpand(true);
+            if let Some(description) = &function.description {
+                button.set_tooltip_text(Some(description));
+            }
+
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+            let name = gtk::Label::new(Some(&function.fn_name));
+            name.set_halign(gtk::Align::Start);
+            name.set_width_chars(16);
+            let signature = gtk::Label::new(Some(&function.signature));
+            signature.add_css_class("dim-label");
+            signature.set_halign(gtk::Align::Start);
+            signature.set_ellipsize(gtk::pango::EllipsizeMode::End);
+            signature.set_hexpand(true);
+            row.append(&name);
+            row.append(&signature);
+            button.set_child(Some(&row));
+
+            let input_entry = input_entry.clone();
+            let dialog = dialog.clone();
+            button.connect_clicked(move |_| {
+                insert_entry_text(&input_entry, &format!("{}(", function.fn_name));
+                dialog.force_close();
+            });
+            list.append(&button);
+        }
+
+        expander.set_child(Some(&list));
+        content.append(&expander);
+    }
+    dialog.present(Some(window));
+}
+
+fn browser_dialog(title: &str, content: &impl IsA<gtk::Widget>) -> adw::AlertDialog {
+    let scroller = gtk::ScrolledWindow::builder()
+        .min_content_width(420)
+        .min_content_height(320)
+        .max_content_height(520)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .vscrollbar_policy(gtk::PolicyType::Automatic)
+        .child(content)
+        .build();
+
+    let dialog = adw::AlertDialog::new(Some(title), None);
+    dialog.add_response("close", "Close");
+    dialog.set_close_response("close");
+    dialog.set_default_response(Some("close"));
+    dialog.set_extra_child(Some(&scroller));
+    dialog
+}
+
+fn insert_entry_text(entry: &gtk::Entry, insertion: &str) {
+    let current = entry.text().to_string();
+    let cursor = entry.position().max(0) as usize;
+    let cursor = current
+        .char_indices()
+        .nth(cursor)
+        .map(|(index, _)| index)
+        .unwrap_or_else(|| current.len());
+
+    let needs_leading_space = cursor > 0
+        && current[..cursor]
+            .chars()
+            .next_back()
+            .is_some_and(|ch| !ch.is_whitespace());
+    let needs_trailing_space = cursor < current.len()
+        && current[cursor..]
+            .chars()
+            .next()
+            .is_some_and(|ch| !ch.is_whitespace());
+
+    let mut inserted = String::new();
+    if needs_leading_space {
+        inserted.push(' ');
+    }
+    inserted.push_str(insertion);
+    if needs_trailing_space {
+        inserted.push(' ');
+    }
+
+    let mut next = current;
+    next.insert_str(cursor, &inserted);
+    entry.set_text(&next);
+    entry.set_position((cursor + inserted.len()) as i32);
+    entry.grab_focus();
+}
+
 fn show_custom_definitions_dialog(
     window: &adw::ApplicationWindow,
     session: Rc<RefCell<NumbatSession>>,
@@ -1194,6 +1464,17 @@ fn make_sidebar_shortcut_button(icon_name: &str, label: &str, shortcut_text: &st
     shortcut.add_css_class("caption");
     row.append(&shortcut);
 
+    button.set_child(Some(&row));
+    button
+}
+
+fn make_browser_shortcut_button(icon_name: &str, label: &str) -> gtk::Button {
+    let button = gtk::Button::new();
+    button.set_tooltip_text(Some(label));
+
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    row.append(&gtk::Image::from_icon_name(icon_name));
+    row.append(&gtk::Label::new(Some(label)));
     button.set_child(Some(&row));
     button
 }

@@ -6,6 +6,7 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use numbat::command::{CommandControlFlow, CommandRunner};
+use numbat::markup::plain_text_format;
 use numbat::module_importer::{BuiltinModuleImporter, ChainedImporter, FileSystemImporter};
 use numbat::resolver::CodeSource;
 use numbat::session_history::SessionHistory;
@@ -203,6 +204,87 @@ impl NumbatSession {
         Ok(())
     }
 
+    pub fn constants(&self) -> Vec<String> {
+        let mut constants: Vec<_> = self
+            .context
+            .variable_names()
+            .map(|name| name.to_string())
+            .collect();
+        constants.sort();
+        constants.dedup();
+        constants
+    }
+
+    pub fn unit_groups(&self) -> Vec<UnitBrowserGroup> {
+        use std::collections::BTreeMap;
+
+        let mut groups: BTreeMap<String, Vec<UnitBrowserItem>> = BTreeMap::new();
+        for (unit_name, (_base_representation, metadata)) in self.context.unit_representations() {
+            let dimension = plain_text_format(&metadata.readable_type, false).to_string();
+            if dimension == "Scalar" || dimension.is_empty() {
+                continue;
+            }
+
+            let canonical_name = metadata
+                .aliases
+                .first()
+                .map(|(name, _)| name.to_string())
+                .unwrap_or_else(|| unit_name.to_string());
+            if canonical_name.is_empty() {
+                continue;
+            }
+
+            let display_name = metadata
+                .name
+                .as_ref()
+                .map(|name| name.to_string())
+                .unwrap_or_else(|| canonical_name.clone());
+
+            groups.entry(dimension).or_default().push(UnitBrowserItem {
+                display_name,
+                canonical_name,
+            });
+        }
+
+        let mut groups: Vec<_> = groups
+            .into_iter()
+            .map(|(dimension, mut units)| {
+                units.sort_by(|a, b| a.display_name.cmp(&b.display_name));
+                units.dedup_by(|a, b| {
+                    a.display_name == b.display_name && a.canonical_name == b.canonical_name
+                });
+                UnitBrowserGroup { dimension, units }
+            })
+            .collect();
+        groups.sort_by(|a, b| {
+            dimension_priority(&a.dimension)
+                .cmp(&dimension_priority(&b.dimension))
+                .then_with(|| a.dimension.cmp(&b.dimension))
+        });
+        groups
+    }
+
+    pub fn functions(&self) -> Vec<FunctionBrowserItem> {
+        let mut functions: Vec<_> = self
+            .context
+            .functions()
+            .map(|function| FunctionBrowserItem {
+                fn_name: function.fn_name.to_string(),
+                signature: function.signature_str.to_string(),
+                description: function
+                    .description
+                    .map(|description| description.to_string()),
+                module: code_source_label(&function.code_source),
+            })
+            .collect();
+        functions.sort_by(|a, b| {
+            a.module
+                .cmp(&b.module)
+                .then_with(|| a.fn_name.cmp(&b.fn_name))
+        });
+        functions
+    }
+
     fn evaluate_expression(&mut self, input: &str) -> Result<(), String> {
         let output = self.output.clone();
         let mut settings = InterpreterSettings {
@@ -232,6 +314,26 @@ pub struct SubmissionOutcome {
     pub reset_session: bool,
     pub quit: bool,
     pub status: Option<&'static str>,
+}
+
+#[derive(Clone)]
+pub struct UnitBrowserItem {
+    pub display_name: String,
+    pub canonical_name: String,
+}
+
+#[derive(Clone)]
+pub struct UnitBrowserGroup {
+    pub dimension: String,
+    pub units: Vec<UnitBrowserItem>,
+}
+
+#[derive(Clone)]
+pub struct FunctionBrowserItem {
+    pub fn_name: String,
+    pub signature: String,
+    pub description: Option<String>,
+    pub module: String,
 }
 
 fn configured_module_paths() -> Vec<PathBuf> {
@@ -299,4 +401,36 @@ fn apply_custom_code_to_context(context: &mut Context, custom_code: &str) -> Res
         .interpret(custom_code, CodeSource::Text)
         .map(|_| ())
         .map_err(|error| error.to_string())
+}
+
+fn dimension_priority(dimension: &str) -> usize {
+    const PRIORITY_DIMENSIONS: &[&str] = &[
+        "Length",
+        "Mass",
+        "Time",
+        "ElectricCurrent",
+        "Temperature",
+        "AmountOfSubstance",
+        "LuminousIntensity",
+        "DigitalInformation",
+        "Money",
+    ];
+
+    PRIORITY_DIMENSIONS
+        .iter()
+        .position(|&candidate| candidate == dimension)
+        .unwrap_or(usize::MAX)
+}
+
+fn code_source_label(code_source: &CodeSource) -> String {
+    match code_source {
+        CodeSource::Module(path, _) => path.to_string(),
+        CodeSource::Text => "User-defined".to_string(),
+        CodeSource::Internal => "Internal".to_string(),
+        CodeSource::File(path) => path
+            .file_stem()
+            .and_then(|name| name.to_str())
+            .unwrap_or("File")
+            .to_string(),
+    }
 }
