@@ -409,6 +409,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let draft_input = Rc::clone(&draft_input);
         let history_buffer = history_buffer.clone();
         let history_view = history_view.clone();
+        let history_scroller = history_scroller.clone();
         let status_label = status_label.clone();
         let toast_overlay = toast_overlay.clone();
         let app = app.clone();
@@ -432,6 +433,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
             let outcome = session.borrow_mut().handle_input(&trimmed);
             append_history(&history_buffer, &history_view, &trimmed, &outcome.output);
+            scroll_to_bottom_after_layout(&history_scroller);
 
             if outcome.clear_history {
                 history_buffer.set_text("");
@@ -959,6 +961,14 @@ fn completion_prefix_start(text: &str, cursor: usize) -> usize {
     }
 
     prefix_start
+}
+
+fn scroll_to_bottom_after_layout(scroller: &gtk::ScrolledWindow) {
+    let scroller = scroller.clone();
+    gtk::glib::idle_add_local_once(move || {
+        let adjustment = scroller.vadjustment();
+        adjustment.set_value((adjustment.upper() - adjustment.page_size()).max(adjustment.lower()));
+    });
 }
 
 fn build_shortcuts_dialog() -> adw::ShortcutsDialog {
