@@ -94,19 +94,34 @@
       <caption>Main Window</caption>
     </screenshot>
 
-    <screenshot type="default">
+    <screenshot>
       <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/edec29250f2f543eb4c4c90303746999d9cce942/data/screenshots/wombat_suggestions.png</image>
       <caption>Wombat suggestion bar</caption>
     </screenshot>
 
-    <screenshot type="default">
+    <screenshot>
       <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/edec29250f2f543eb4c4c90303746999d9cce942/data/screenshots/wombat_keyboard_shortcuts.png</image>
       <caption>Keyboard shortcuts in Wombat</caption>
     </screenshot>
 
-    <screenshot type="default">
+    <screenshot>
       <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/edec29250f2f543eb4c4c90303746999d9cce942/data/screenshots/wombat_options_pane.png</image>
       <caption>Wombat options panel</caption>
+    </screenshot>
+
+    <screenshot>
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/ed9351cf772a3907491a1e7cd54ab728ae6d44ef/data/screenshots/wombat_mobile.png</image>
+      <caption>Wombat mobile view</caption>
+    </screenshot>
+
+    <screenshot>
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/ed9351cf772a3907491a1e7cd54ab728ae6d44ef/data/screenshots/wombat_mobile_sidebar.png</image>
+      <caption>Sidebar view in mobile screen</caption>
+    </screenshot>
+
+    <screenshot>
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/ed9351cf772a3907491a1e7cd54ab728ae6d44ef/data/screenshots/wombat_mobile_suggestions.png</image>
+      <caption>Suggestions in mobile view</caption>
     </screenshot>
   </screenshots>
 
