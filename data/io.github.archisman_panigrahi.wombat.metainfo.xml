@@ -34,6 +34,18 @@
   <url type="vcs-browser">https://github.com/archisman-panigrahi/wombat</url>
 
   <releases>
+    <release version="0.5.0" date="2026-04-26">
+      <description>
+        <p>New features and improvements in this release:</p>
+        <ul>
+          <li>Added automated suggestions to speed up expression entry and help discover valid syntax as you type.</li>
+          <li>Added dedicated browsers for units, constants, and functions for faster in-app reference.</li>
+          <li>Added support for custom definitions so frequently used expressions can be reused easily.</li>
+          <li>Improved output behavior by automatically scrolling to the latest result after each calculation.</li>
+        </ul>
+      </description>
+    </release>
+
     <release version="0.4.1" date="2026-04-26">
       <description>
         <p>Bug fixes and improvements in this release:</p>
@@ -103,7 +115,7 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/63b5e2d93a1f790e2883ce2a93a53525770071ae/data/screenshots/wombat.png</image>
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/5c6f0792ee3fac0afed9baaba3febcaff84eb09b/data/screenshots/wombat.png</image>
       <caption>Main Window</caption>
     </screenshot>
 
