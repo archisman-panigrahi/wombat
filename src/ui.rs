@@ -332,11 +332,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     sync_operator_buttons();
 
-    let calculator_clamp = adw::Clamp::new();
-    calculator_clamp.set_maximum_size(860);
-    calculator_clamp.set_tightening_threshold(520);
-    calculator_clamp.set_child(Some(&root));
-
     // Now add the reset and clear actions after history_buffer is created
     let reset_session_action = gio::SimpleAction::new("reset-session", None);
     {
@@ -935,7 +930,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     let content_toolbar_view = adw::ToolbarView::new();
     content_toolbar_view.add_top_bar(&header);
-    content_toolbar_view.set_content(Some(&calculator_clamp));
+    content_toolbar_view.set_content(Some(&root));
 
     overlay_split_view.set_content(Some(&content_toolbar_view));
     overlay_split_view.set_show_sidebar(false);
