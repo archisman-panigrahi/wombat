@@ -33,6 +33,7 @@ pub fn build_about_dialog() -> adw::AboutDialog {
     );
 
     dialog.add_link("Numbat", "https://numbat.dev");
+    dialog.add_link("Numbat-app", "https://github.com/sharkdp/numbat-app");
 
     dialog
 }
