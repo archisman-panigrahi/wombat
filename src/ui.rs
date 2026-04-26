@@ -22,6 +22,8 @@ const OPERATOR_BUTTONS_DESKTOP_PREF_FILE: &str = "operator-buttons-desktop.conf"
 const COMPLETION_ROW_HEIGHT: i32 = 40;
 const COMPLETION_VISIBLE_ROWS: i32 = 3;
 const COMPLETION_MIN_CHIP_WIDTH: i32 = 96;
+const READY_STATUS: &str = "Ready when you are!";
+const SUGGESTIONS_STATUS: &str = "Suggested (press Tab for quick access).";
 const STARTUP_BANNER_LARGE: &str = r#"
  ██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
  ██║    ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝
@@ -448,7 +450,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 status_label.set_text(status);
                 toast_overlay.add_toast(adw::Toast::new(status));
             } else {
-                status_label.set_text("Ready when you are!");
+                status_label.set_text(READY_STATUS);
             }
 
             if outcome.reset_session {
@@ -733,6 +735,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let input_entry = input_entry.clone();
         let completion_panel = completion_panel.clone();
         let completion_list = completion_list.clone();
+        let status_label = status_label.clone();
         let completion_buttons = Rc::clone(&completion_buttons);
         Rc::new(move || {
             while let Some(child) = completion_list.first_child() {
@@ -752,6 +755,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
             if prefix_start >= cursor {
                 completion_panel.set_reveal_child(false);
+                status_label.set_text(READY_STATUS);
                 return;
             }
 
@@ -760,6 +764,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
             if suggestions.is_empty() {
                 completion_panel.set_reveal_child(false);
+                status_label.set_text(READY_STATUS);
                 return;
             }
 
@@ -774,6 +779,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 let completion_buttons_for_keys = Rc::clone(&completion_buttons);
                 let input_entry_for_keys = input_entry.clone();
                 let completion_panel_for_keys = completion_panel.clone();
+                let status_label_for_keys = status_label.clone();
                 let key_controller = gtk::EventControllerKey::new();
                 key_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
                 key_controller.connect_key_pressed(move |_, key, _, _| match key {
@@ -795,6 +801,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                     }
                     gtk::gdk::Key::Escape => {
                         completion_panel_for_keys.set_reveal_child(false);
+                        status_label_for_keys.set_text(READY_STATUS);
                         input_entry_for_keys.grab_focus();
                         gtk::glib::Propagation::Stop
                     }
@@ -804,6 +811,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
                 let input_entry = input_entry.clone();
                 let completion_panel = completion_panel.clone();
+                let status_label = status_label.clone();
                 let suggestion = suggestion.clone();
                 button.connect_clicked(move |_| {
                     let mut text = input_entry.text().to_string();
@@ -820,6 +828,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                     input_entry.set_text(&text);
                     input_entry.set_position(-1);
                     completion_panel.set_reveal_child(false);
+                    status_label.set_text(READY_STATUS);
                     input_entry.grab_focus();
                 });
 
@@ -828,12 +837,14 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             }
 
             completion_panel.set_reveal_child(true);
+            status_label.set_text(SUGGESTIONS_STATUS);
         })
     };
 
     {
         let completion_panel = completion_panel.clone();
         let completion_list = completion_list.clone();
+        let status_label = status_label.clone();
         let completion_buttons = Rc::clone(&completion_buttons);
         let show_completions = Rc::clone(&show_completions);
         input_entry.connect_changed(move |entry| {
@@ -847,6 +858,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 }
                 completion_buttons.borrow_mut().clear();
                 completion_panel.set_reveal_child(false);
+                status_label.set_text(READY_STATUS);
             }
         });
     }
@@ -858,6 +870,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let input_entry_for_keys = input_entry.clone();
         let completion_panel = completion_panel.clone();
         let completion_buttons = Rc::clone(&completion_buttons);
+        let status_label = status_label.clone();
         let show_completions = Rc::clone(&show_completions);
         let key_controller = gtk::EventControllerKey::new();
         key_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
@@ -878,6 +891,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 }
 
                 completion_panel.set_reveal_child(false);
+                status_label.set_text(READY_STATUS);
                 let history = command_history.borrow();
                 if history.is_empty() {
                     return gtk::glib::Propagation::Stop;
@@ -903,6 +917,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 }
 
                 completion_panel.set_reveal_child(false);
+                status_label.set_text(READY_STATUS);
                 let history = command_history.borrow();
                 if history.is_empty() {
                     return gtk::glib::Propagation::Stop;
@@ -928,6 +943,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             }
             _ => {
                 completion_panel.set_reveal_child(false);
+                status_label.set_text(READY_STATUS);
                 gtk::glib::Propagation::Proceed
             }
         });
