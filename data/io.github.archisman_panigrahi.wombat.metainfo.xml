@@ -34,6 +34,17 @@
   <url type="vcs-browser">https://github.com/archisman-panigrahi/wombat</url>
 
   <releases>
+    <release version="0.5.0" date="2026-04-26">
+      <description>
+        <p>New features and improvements in this release:</p>
+        <ul>
+          <li>Added a calculator-inspired visual theme with glassy surfaces, a display-style history area, and colorful calculator keys.</li>
+          <li>Improved wide and fullscreen layouts so the output area uses the available window width.</li>
+          <li> Show common math operators in mobile mode.</li>
+        </ul>
+      </description>
+    </release>
+
     <release version="0.4.0" date="2026-04-25">
       <description>
         <p>New features and improvements in this release:</p>
@@ -91,7 +102,12 @@
   <screenshots>
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/63b5e2d93a1f790e2883ce2a93a53525770071ae/data/screenshots/wombat.png</image>
-      <caption>Main Window</caption>
+      <caption>Main Window with default settings and theme</caption>
+    </screenshot>
+
+    <screenshot>
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/8acdf278e808bf320323f3d5ffab97bc97fcd06d/data/screenshots/wombat_normal.png</image>
+      <caption>Main Window with native system theme</caption>
     </screenshot>
 
     <screenshot>

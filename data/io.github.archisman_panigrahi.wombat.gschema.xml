@@ -8,5 +8,12 @@
         If enabled, Wombat shows +, -, *, /, and ^ quick-insert operator buttons in desktop layouts.
       </description>
     </key>
+    <key name="use-calculator-look" type="b">
+      <default>true</default>
+      <summary>Use the calculator look</summary>
+      <description>
+        If enabled, Wombat uses its built-in calculator-inspired visual theme. If disabled, Wombat follows the system theme.
+      </description>
+    </key>
   </schema>
 </schemalist>

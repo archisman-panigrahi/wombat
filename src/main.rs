@@ -4,6 +4,7 @@ use gtk::gio;
 mod about;
 mod output;
 mod session;
+mod theme;
 mod ui;
 
 const APP_ID: &str = "io.github.archisman_panigrahi.wombat";

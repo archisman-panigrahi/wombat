@@ -3,26 +3,49 @@ use numbat::markup::{FormatType as NumbatFormatType, FormattedString};
 
 use crate::session::OutputEvent;
 
+const SYSTEM_TAGS: &[(&str, &str)] = &[
+    ("nb-prompt", "#64748b"),
+    ("nb-value", "#0f766e"),
+    ("nb-unit", "#2563eb"),
+    ("nb-operator", "#b45309"),
+    ("nb-identifier", "#334155"),
+    ("nb-type", "#7c2d12"),
+    ("nb-string", "#166534"),
+    ("nb-keyword", "#a16207"),
+    ("nb-dimmed", "#6b7280"),
+    ("nb-decorator", "#be123c"),
+    ("nb-emphasized", "#111827"),
+    ("nb-banner", "#111827"),
+];
+
+const CALCULATOR_TAGS: &[(&str, &str)] = &[
+    ("nb-prompt", "#56e0c8"),
+    ("nb-value", "#7dd3fc"),
+    ("nb-unit", "#a78bfa"),
+    ("nb-operator", "#fb923c"),
+    ("nb-identifier", "#e2e8f0"),
+    ("nb-type", "#c084fc"),
+    ("nb-string", "#86efac"),
+    ("nb-keyword", "#f472b6"),
+    ("nb-dimmed", "#94a3b8"),
+    ("nb-decorator", "#fb7185"),
+    ("nb-emphasized", "#f8fafc"),
+    ("nb-banner", "#56e0c8"),
+];
+
 pub fn ensure_numbat_tags(history_buffer: &gtk::TextBuffer) {
     let table = history_buffer.tag_table();
 
-    let tags = [
-        ("nb-prompt", "#64748b"),
-        ("nb-value", "#0f766e"),
-        ("nb-unit", "#2563eb"),
-        ("nb-operator", "#b45309"),
-        ("nb-identifier", "#334155"),
-        ("nb-type", "#7c2d12"),
-        ("nb-string", "#166534"),
-        ("nb-keyword", "#a16207"),
-        ("nb-dimmed", "#6b7280"),
-        ("nb-decorator", "#be123c"),
-        ("nb-emphasized", "#111827"),
-    ];
+    for (name, color) in SYSTEM_TAGS {
+        if *name == "nb-banner" {
+            continue;
+        }
 
-    for (name, color) in tags {
         if table.lookup(name).is_none() {
-            let tag = gtk::TextTag::builder().name(name).foreground(color).build();
+            let tag = gtk::TextTag::builder()
+                .name(*name)
+                .foreground(*color)
+                .build();
             table.add(&tag);
         }
     }
@@ -30,11 +53,27 @@ pub fn ensure_numbat_tags(history_buffer: &gtk::TextBuffer) {
     if table.lookup("nb-banner").is_none() {
         let tag = gtk::TextTag::builder()
             .name("nb-banner")
+            .foreground("#111827")
             .family("monospace")
             .family_set(true)
             .wrap_mode(gtk::WrapMode::None)
             .build();
         table.add(&tag);
+    }
+}
+
+pub fn set_numbat_theme(history_buffer: &gtk::TextBuffer, calculator_look: bool) {
+    let table = history_buffer.tag_table();
+    let tags = if calculator_look {
+        CALCULATOR_TAGS
+    } else {
+        SYSTEM_TAGS
+    };
+
+    for (name, color) in tags {
+        if let Some(tag) = table.lookup(name) {
+            tag.set_foreground(Some(color));
+        }
     }
 }
 

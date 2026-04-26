@@ -7,8 +7,9 @@ use adw::prelude::*;
 use gtk::gio;
 
 use crate::about::build_about_dialog;
-use crate::output::{append_history, ensure_numbat_tags, set_startup_message};
+use crate::output::{append_history, ensure_numbat_tags, set_numbat_theme, set_startup_message};
 use crate::session::NumbatSession;
+use crate::theme::{apply_calculator_look, load_app_css};
 
 const HISTORY_MARGIN: i32 = 8;
 const INPUT_MARGIN: i32 = 12;
@@ -18,7 +19,9 @@ const SIDEBAR_DESKTOP_MAX_WIDTH: f64 = 280.0;
 const SIDEBAR_MOBILE_MAX_WIDTH: f64 = 280.0;
 const SETTINGS_SCHEMA_ID: &str = "io.github.archisman_panigrahi.wombat";
 const SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP: &str = "show-operator-buttons-desktop";
+const SETTINGS_KEY_USE_CALCULATOR_LOOK: &str = "use-calculator-look";
 const OPERATOR_BUTTONS_DESKTOP_PREF_FILE: &str = "operator-buttons-desktop.conf";
+const CALCULATOR_LOOK_PREF_FILE: &str = "calculator-look.conf";
 const STARTUP_BANNER_LARGE: &str = r#"
  ██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
  ██║    ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝
@@ -36,6 +39,8 @@ const STARTUP_BANNER_SMALL: &str = r#"
 const BANNER_SWITCH_WIDTH: i32 = 500;
 
 pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
+    load_app_css();
+
     let session = Rc::new(RefCell::new(NumbatSession::new()));
     let command_history: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
     let history_cursor: Rc<RefCell<Option<usize>>> = Rc::new(RefCell::new(None));
@@ -48,10 +53,13 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .default_height(640)
         .title("Wombat")
         .build();
+    window.add_css_class("wombat-window");
 
     let header = adw::HeaderBar::new();
+    header.add_css_class("wombat-chrome");
     let title = gtk::Label::new(Some("Wombat"));
     title.add_css_class("title-3");
+    title.add_css_class("wombat-title");
     header.set_title_widget(Some(&title));
 
     let overlay_split_view = adw::OverlaySplitView::new();
@@ -118,8 +126,11 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     let settings = gio::SettingsSchemaSource::default()
         .and_then(|source| source.lookup(SETTINGS_SCHEMA_ID, true))
         .map(|_| gio::Settings::new(SETTINGS_SCHEMA_ID));
+    let calculator_look_enabled = Rc::new(Cell::new(load_calculator_look_pref(&settings)));
+    apply_calculator_look(&window, calculator_look_enabled.get());
 
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    root.add_css_class("wombat-workspace");
     root.set_margin_top(HISTORY_MARGIN);
     root.set_margin_bottom(HISTORY_MARGIN);
     root.set_margin_start(HISTORY_MARGIN);
@@ -133,9 +144,11 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .wrap_mode(gtk::WrapMode::WordChar)
         .vexpand(true)
         .build();
+    history_view.add_css_class("wombat-history");
     let history_buffer = gtk::TextBuffer::new(None);
     history_view.set_buffer(Some(&history_buffer));
     ensure_numbat_tags(&history_buffer);
+    set_numbat_theme(&history_buffer, calculator_look_enabled.get());
 
     let banner_breakpoint = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
         adw::BreakpointConditionLengthType::MaxWidth,
@@ -152,11 +165,13 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .build();
     history_scroller.set_min_content_height(120);
     history_scroller.add_css_class("card");
+    history_scroller.add_css_class("wombat-history-frame");
 
     let input_entry = gtk::Entry::builder()
         .hexpand(true)
         .placeholder_text("Type Numbat code, then press Enter")
         .build();
+    input_entry.add_css_class("wombat-input");
 
     let completion_panel = gtk::Revealer::builder()
         .transition_type(gtk::RevealerTransitionType::SlideDown)
@@ -175,12 +190,15 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .child(&completion_list)
         .build();
     completion_scroller.add_css_class("card");
+    completion_scroller.add_css_class("wombat-completions-frame");
     completion_panel.set_child(Some(&completion_scroller));
 
     let run_button = gtk::Button::with_label("Run");
     run_button.add_css_class("suggested-action");
+    run_button.add_css_class("wombat-run");
 
     let suggestions_button = gtk::Button::with_label("Suggestions");
+    suggestions_button.add_css_class("wombat-secondary");
     suggestions_button.set_sensitive(false);
 
     let input_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
@@ -205,6 +223,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     for operator in ["+", "-", "*", "/", "^"] {
         let btn = gtk::Button::with_label(operator);
         btn.add_css_class("pill");
+        btn.add_css_class("wombat-operator");
         let entry_clone = input_entry.clone();
         let token = operator.to_owned();
         btn.connect_clicked(move |_| {
@@ -244,6 +263,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     for (label, constant_name) in constants {
         let btn = gtk::Button::with_label(label);
+        btn.add_css_class("wombat-constant");
         btn.set_tooltip_text(Some(constant_name));
         let entry_clone = input_entry.clone();
         let const_name = constant_name.to_string();
@@ -260,6 +280,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     ));
     status_label.set_halign(gtk::Align::Start);
     status_label.set_wrap(true);
+    status_label.add_css_class("wombat-status");
 
     root.append(&history_scroller);
     root.append(&status_label);
@@ -274,6 +295,23 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .active(desktop_operator_buttons_visible.get())
         .valign(gtk::Align::Center)
         .build();
+    let calculator_look_switch = gtk::Switch::builder()
+        .active(calculator_look_enabled.get())
+        .valign(gtk::Align::Center)
+        .build();
+    {
+        let window = window.clone();
+        let settings = settings.clone();
+        let history_buffer = history_buffer.clone();
+        let calculator_look_enabled = Rc::clone(&calculator_look_enabled);
+        calculator_look_switch.connect_active_notify(move |switch| {
+            let enabled = switch.is_active();
+            calculator_look_enabled.set(enabled);
+            apply_calculator_look(&window, enabled);
+            set_numbat_theme(&history_buffer, enabled);
+            save_calculator_look_pref(&settings, enabled);
+        });
+    }
     let sync_operator_buttons = Rc::new({
         let overlay_split_view = overlay_split_view.clone();
         let operator_visibility_switch = operator_visibility_switch.clone();
@@ -331,11 +369,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     window.add_breakpoint(banner_breakpoint);
 
     sync_operator_buttons();
-
-    let calculator_clamp = adw::Clamp::new();
-    calculator_clamp.set_maximum_size(860);
-    calculator_clamp.set_tightening_threshold(520);
-    calculator_clamp.set_child(Some(&root));
 
     // Now add the reset and clear actions after history_buffer is created
     let reset_session_action = gio::SimpleAction::new("reset-session", None);
@@ -504,6 +537,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     };
 
     let sidebar_panel = gtk::Box::new(gtk::Orientation::Vertical, 6);
+    sidebar_panel.add_css_class("wombat-sidebar");
     sidebar_panel.set_margin_top(6);
     sidebar_panel.set_margin_bottom(6);
     sidebar_panel.set_margin_start(6);
@@ -545,6 +579,13 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         "Clear Inputs",
         clear_history_action.clone(),
     ));
+
+    let calculator_look_row = adw::ActionRow::new();
+    calculator_look_row.set_title("Calculator Look");
+    calculator_look_row.set_subtitle("Turn off to follow the system theme.");
+    calculator_look_row.add_suffix(&calculator_look_switch);
+    calculator_look_row.set_activatable_widget(Some(&calculator_look_switch));
+    sidebar_panel.append(&calculator_look_row);
 
     let operator_row = adw::ActionRow::new();
     operator_row.set_title("Show Operator Buttons");
@@ -604,8 +645,10 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .min_content_width(240)
         .child(&sidebar_panel)
         .build();
+    sidebar_scroller.add_css_class("wombat-sidebar");
 
     let sidebar_header_bar = adw::HeaderBar::new();
+    sidebar_header_bar.add_css_class("wombat-chrome");
     sidebar_header_bar.set_show_end_title_buttons(false);
     sidebar_header_bar.set_show_start_title_buttons(false);
     let sidebar_title_box = gtk::Box::new(gtk::Orientation::Horizontal, 6);
@@ -630,6 +673,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     sidebar_header_bar.pack_end(&close_sidebar_button);
 
     let sidebar_toolbar_view = adw::ToolbarView::new();
+    sidebar_toolbar_view.add_css_class("wombat-sidebar");
     sidebar_toolbar_view.add_top_bar(&sidebar_header_bar);
     sidebar_toolbar_view.set_content(Some(&sidebar_scroller));
     overlay_split_view.set_sidebar(Some(&sidebar_toolbar_view));
@@ -781,6 +825,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 button.set_halign(gtk::Align::Fill);
                 button.set_hexpand(true);
                 button.add_css_class("flat");
+                button.add_css_class("wombat-completion-button");
 
                 let suggestion_index = completion_buttons.borrow().len();
                 let completion_buttons_for_keys = Rc::clone(&completion_buttons);
@@ -935,7 +980,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     let content_toolbar_view = adw::ToolbarView::new();
     content_toolbar_view.add_top_bar(&header);
-    content_toolbar_view.set_content(Some(&calculator_clamp));
+    content_toolbar_view.set_content(Some(&root));
 
     overlay_split_view.set_content(Some(&content_toolbar_view));
     overlay_split_view.set_show_sidebar(false);
@@ -1052,7 +1097,7 @@ fn load_operator_buttons_pref(settings: &Option<gio::Settings>) -> bool {
     settings
         .as_ref()
         .map(|settings| settings.boolean(SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP))
-        .unwrap_or_else(|| load_bool_pref(pref_path(), false))
+        .unwrap_or_else(|| load_bool_pref(pref_path(OPERATOR_BUTTONS_DESKTOP_PREF_FILE), false))
 }
 
 fn save_operator_buttons_pref(settings: &Option<gio::Settings>, value: bool) {
@@ -1061,17 +1106,33 @@ fn save_operator_buttons_pref(settings: &Option<gio::Settings>, value: bool) {
             eprintln!(
                 "Failed to persist setting {SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP}: {err}"
             );
-            save_bool_pref(pref_path(), value);
+            save_bool_pref(pref_path(OPERATOR_BUTTONS_DESKTOP_PREF_FILE), value);
         }
     } else {
-        save_bool_pref(pref_path(), value);
+        save_bool_pref(pref_path(OPERATOR_BUTTONS_DESKTOP_PREF_FILE), value);
     }
 }
 
-fn pref_path() -> PathBuf {
-    gtk::glib::user_config_dir()
-        .join("wombat")
-        .join(OPERATOR_BUTTONS_DESKTOP_PREF_FILE)
+fn load_calculator_look_pref(settings: &Option<gio::Settings>) -> bool {
+    settings
+        .as_ref()
+        .map(|settings| settings.boolean(SETTINGS_KEY_USE_CALCULATOR_LOOK))
+        .unwrap_or_else(|| load_bool_pref(pref_path(CALCULATOR_LOOK_PREF_FILE), true))
+}
+
+fn save_calculator_look_pref(settings: &Option<gio::Settings>, value: bool) {
+    if let Some(settings) = settings {
+        if let Err(err) = settings.set_boolean(SETTINGS_KEY_USE_CALCULATOR_LOOK, value) {
+            eprintln!("Failed to persist setting {SETTINGS_KEY_USE_CALCULATOR_LOOK}: {err}");
+            save_bool_pref(pref_path(CALCULATOR_LOOK_PREF_FILE), value);
+        }
+    } else {
+        save_bool_pref(pref_path(CALCULATOR_LOOK_PREF_FILE), value);
+    }
+}
+
+fn pref_path(file_name: &str) -> PathBuf {
+    gtk::glib::user_config_dir().join("wombat").join(file_name)
 }
 
 fn load_bool_pref(path: PathBuf, default_value: bool) -> bool {
