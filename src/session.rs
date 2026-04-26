@@ -1,5 +1,6 @@
 use std::cell::Cell;
 use std::env;
+use std::mem;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
@@ -51,7 +52,7 @@ impl SharedOutput {
     }
 
     fn take_events(&self) -> Vec<OutputEvent> {
-        self.events.lock().unwrap().clone()
+        mem::take(&mut *self.events.lock().unwrap())
     }
 }
 

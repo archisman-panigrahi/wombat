@@ -118,15 +118,16 @@ fn insert_output_event(
             }
         }
         OutputEvent::Markup(markup) => {
+            let mut ends_with_newline = false;
             for FormattedString(_, format, text) in &markup.0 {
-                let content = text.to_string();
                 if let Some(tag_name) = tag_for_format(*format) {
-                    history_buffer.insert_with_tags_by_name(end_iter, &content, &[tag_name]);
+                    history_buffer.insert_with_tags_by_name(end_iter, text, &[tag_name]);
                 } else {
-                    history_buffer.insert(end_iter, &content);
+                    history_buffer.insert(end_iter, text);
                 }
+                ends_with_newline = text.ends_with('\n');
             }
-            if !markup.to_string().ends_with('\n') {
+            if !ends_with_newline {
                 history_buffer.insert(end_iter, "\n");
             }
         }

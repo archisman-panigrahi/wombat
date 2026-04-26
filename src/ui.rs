@@ -73,7 +73,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     {
         let window = window.clone();
         show_credits_action.connect_activate(move |_, _| {
-            let about_dialog = build_about_dialog(&window);
+            let about_dialog = build_about_dialog();
             about_dialog.present(Some(&window));
         });
     }
@@ -81,22 +81,13 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     let open_numbat_syntax_action = gio::SimpleAction::new("open-numbat-syntax", None);
     open_numbat_syntax_action.connect_activate(move |_, _| {
-        if let Err(err) =
-            gio::AppInfo::launch_default_for_uri(NUMBAT_SYNTAX_URL, None::<&gio::AppLaunchContext>)
-        {
-            eprintln!("Failed to open Numbat syntax docs: {err}");
-        }
+        open_uri(NUMBAT_SYNTAX_URL, "Numbat syntax docs");
     });
     window.add_action(&open_numbat_syntax_action);
 
     let open_examples_action = gio::SimpleAction::new("open-examples", None);
     open_examples_action.connect_activate(move |_, _| {
-        if let Err(err) = gio::AppInfo::launch_default_for_uri(
-            NUMBAT_EXAMPLES_URL,
-            None::<&gio::AppLaunchContext>,
-        ) {
-            eprintln!("Failed to open Numbat examples docs: {err}");
-        }
+        open_uri(NUMBAT_EXAMPLES_URL, "Numbat examples docs");
     });
     window.add_action(&open_examples_action);
 
@@ -112,7 +103,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         });
     }
     window.add_action(&toggle_fullscreen_action);
-    app.set_accels_for_action("win.toggle-fullscreen", &["F11"]);
 
     let show_keyboard_shortcuts_action = gio::SimpleAction::new("show-keyboard-shortcuts", None);
     {
@@ -578,24 +568,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         show_keyboard_shortcuts_action.clone(),
     ));
     {
-        let button = gtk::Button::new();
-        button.set_hexpand(true);
-        button.set_halign(gtk::Align::Fill);
-        button.add_css_class("flat");
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-        row.append(&gtk::Image::from_icon_name("view-fullscreen-symbolic"));
-        let text = gtk::Label::new(Some("Fullscreen"));
-        text.set_halign(gtk::Align::Start);
-        row.append(&text);
-        let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        spacer.set_hexpand(true);
-        row.append(&spacer);
-        let shortcut = gtk::Label::new(Some("F11"));
-        shortcut.add_css_class("dim-label");
-        shortcut.add_css_class("caption");
-        row.append(&shortcut);
-        button.set_child(Some(&row));
-
+        let button = make_sidebar_shortcut_button("view-fullscreen-symbolic", "Fullscreen", "F11");
         let window = window.clone();
         let overlay_split_view = overlay_split_view.clone();
         button.connect_clicked(move |_| {
@@ -612,24 +585,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         sidebar_panel.append(&button);
     }
     {
-        let button = gtk::Button::new();
-        button.set_hexpand(true);
-        button.set_halign(gtk::Align::Fill);
-        button.add_css_class("flat");
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-        row.append(&gtk::Image::from_icon_name("application-exit-symbolic"));
-        let text = gtk::Label::new(Some("Quit"));
-        text.set_halign(gtk::Align::Start);
-        row.append(&text);
-        let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        spacer.set_hexpand(true);
-        row.append(&spacer);
-        let shortcut = gtk::Label::new(Some("Ctrl+Q"));
-        shortcut.add_css_class("dim-label");
-        shortcut.add_css_class("caption");
-        row.append(&shortcut);
-        button.set_child(Some(&row));
-
+        let button = make_sidebar_shortcut_button("application-exit-symbolic", "Quit", "Ctrl+Q");
         let app = app.clone();
         let overlay_split_view = overlay_split_view.clone();
         button.connect_clicked(move |_| {
@@ -688,7 +644,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             overlay_split_view.set_show_sidebar(show_sidebar);
 
             if show_sidebar {
-                focus_first_sidebar_button(&sidebar_buttons);
+                focus_first_button(&sidebar_buttons);
             } else {
                 input_entry.grab_focus();
             }
@@ -730,12 +686,12 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             key_controller.connect_key_pressed(move |_, key, _, _| match key {
                 gtk::gdk::Key::Up => {
                     let button_count = sidebar_buttons.borrow().len();
-                    focus_sidebar_button(&sidebar_buttons, previous_index(index, button_count));
+                    focus_button(&sidebar_buttons, previous_index(index, button_count));
                     gtk::glib::Propagation::Stop
                 }
                 gtk::gdk::Key::Down => {
                     let button_count = sidebar_buttons.borrow().len();
-                    focus_sidebar_button(&sidebar_buttons, next_index(index, button_count));
+                    focus_button(&sidebar_buttons, next_index(index, button_count));
                     gtk::glib::Propagation::Stop
                 }
                 _ => gtk::glib::Propagation::Proceed,
@@ -1042,16 +998,40 @@ fn build_shortcuts_dialog() -> adw::ShortcutsDialog {
     dialog
 }
 
-fn focus_first_sidebar_button(sidebar_buttons: &Rc<RefCell<Vec<gtk::Button>>>) {
-    focus_first_button(sidebar_buttons);
-}
-
-fn focus_sidebar_button(sidebar_buttons: &Rc<RefCell<Vec<gtk::Button>>>, index: usize) {
-    focus_button(sidebar_buttons, index);
+fn open_uri(uri: &str, description: &str) {
+    if let Err(err) = gio::AppInfo::launch_default_for_uri(uri, None::<&gio::AppLaunchContext>) {
+        eprintln!("Failed to open {description}: {err}");
+    }
 }
 
 fn focus_first_button(buttons: &Rc<RefCell<Vec<gtk::Button>>>) {
     focus_button(buttons, 0);
+}
+
+fn make_sidebar_shortcut_button(icon_name: &str, label: &str, shortcut_text: &str) -> gtk::Button {
+    let button = gtk::Button::new();
+    button.set_hexpand(true);
+    button.set_halign(gtk::Align::Fill);
+    button.add_css_class("flat");
+
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    row.append(&gtk::Image::from_icon_name(icon_name));
+
+    let text = gtk::Label::new(Some(label));
+    text.set_halign(gtk::Align::Start);
+    row.append(&text);
+
+    let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    spacer.set_hexpand(true);
+    row.append(&spacer);
+
+    let shortcut = gtk::Label::new(Some(shortcut_text));
+    shortcut.add_css_class("dim-label");
+    shortcut.add_css_class("caption");
+    row.append(&shortcut);
+
+    button.set_child(Some(&row));
+    button
 }
 
 fn focus_button(buttons: &Rc<RefCell<Vec<gtk::Button>>>, index: usize) {
