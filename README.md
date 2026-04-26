@@ -6,7 +6,10 @@
 [![AUR](https://img.shields.io/aur/version/wombat)](https://aur.archlinux.org/packages/wombat)
 [![Flathub](https://img.shields.io/flathub/v/io.github.archisman_panigrahi.wombat)](https://flathub.org/apps/details/io.github.archisman_panigrahi.wombat)
 
-Wombat is a scientific calculator using [Numbat](https://github.com/sharkdp/numbat) programming language. It keeps a live Numbat interpreter session in memory and shows the full output history in a scrollable log. It uses GTK4+libadwaita.
+Wombat is a scientific calculator for GNU/Linux using [Numbat](https://github.com/sharkdp/numbat) programming language. It keeps a live Numbat interpreter session in memory and shows the full output history in a scrollable log.
+Written in Rust, it uses GTK4+libadwaita and fully supports desktop and mobile devices running GNU/Linux. 
+
+For Android and iOS, also see [Numbat-app](https://github.com/sharkdp/numbat-app), a similar cross-platform by Numbat's creator.
 
 ![wombat](data/screenshots/wombat.png)
 
@@ -26,7 +29,7 @@ Wombat is a scientific calculator using [Numbat](https://github.com/sharkdp/numb
 - Mobile-friendly responsive layout with touch-friendly controls
 - Flatpak-friendly GTK/libadwaita interface for Linux desktops
 
-For Android and iOS, also see [Numbat App](https://github.com/sharkdp/numbat-app), a cross-platform Numbat app by Numbat's creator.
+
 
 ## Planned features
 
