@@ -19,6 +19,9 @@ const SIDEBAR_MOBILE_MAX_WIDTH: f64 = 280.0;
 const SETTINGS_SCHEMA_ID: &str = "io.github.archisman_panigrahi.wombat";
 const SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP: &str = "show-operator-buttons-desktop";
 const OPERATOR_BUTTONS_DESKTOP_PREF_FILE: &str = "operator-buttons-desktop.conf";
+const COMPLETION_ROW_HEIGHT: i32 = 40;
+const COMPLETION_VISIBLE_ROWS: i32 = 3;
+const COMPLETION_MIN_CHIP_WIDTH: i32 = 96;
 const STARTUP_BANNER_LARGE: &str = r#"
  ██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
  ██║    ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝
@@ -163,30 +166,36 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         .reveal_child(false)
         .build();
     let completion_buttons: Rc<RefCell<Vec<gtk::Button>>> = Rc::new(RefCell::new(Vec::new()));
-    let completion_list = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    let completion_list = gtk::FlowBox::new();
     completion_list.set_margin_top(6);
     completion_list.set_margin_bottom(6);
     completion_list.set_margin_start(6);
     completion_list.set_margin_end(6);
+    completion_list.set_column_spacing(6);
+    completion_list.set_row_spacing(6);
+    completion_list.set_halign(gtk::Align::Fill);
+    completion_list.set_valign(gtk::Align::Start);
+    completion_list.set_hexpand(true);
+    completion_list.set_selection_mode(gtk::SelectionMode::None);
+    completion_list.set_min_children_per_line(1);
+    completion_list.set_max_children_per_line(12);
     let completion_scroller = gtk::ScrolledWindow::builder()
-        .min_content_height(96)
+        .min_content_height(COMPLETION_ROW_HEIGHT)
+        .max_content_height(COMPLETION_ROW_HEIGHT * COMPLETION_VISIBLE_ROWS)
         .hscrollbar_policy(gtk::PolicyType::Never)
         .vscrollbar_policy(gtk::PolicyType::Automatic)
         .child(&completion_list)
         .build();
+    completion_scroller.set_propagate_natural_height(true);
     completion_scroller.add_css_class("card");
     completion_panel.set_child(Some(&completion_scroller));
 
     let run_button = gtk::Button::with_label("Run");
     run_button.add_css_class("suggested-action");
 
-    let suggestions_button = gtk::Button::with_label("Suggestions");
-    suggestions_button.set_sensitive(false);
-
     let input_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     input_row.set_margin_top(INPUT_MARGIN);
     input_row.append(&input_entry);
-    input_row.append(&suggestions_button);
     input_row.append(&run_button);
 
     // Operator buttons are always shown on mobile; desktop has an explicit toggle.
@@ -263,9 +272,9 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     root.append(&history_scroller);
     root.append(&status_label);
+    root.append(&completion_panel);
     root.append(&input_row);
     root.append(&operators_revealer);
-    root.append(&completion_panel);
     root.append(&constants_row);
 
     let desktop_operator_buttons_visible =
@@ -717,25 +726,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         input_entry.connect_activate(move |_| submit());
     }
 
-    {
-        let suggestions_button = suggestions_button.clone();
-        let completion_panel = completion_panel.clone();
-        let completion_list = completion_list.clone();
-        let completion_buttons = Rc::clone(&completion_buttons);
-        input_entry.connect_changed(move |entry| {
-            let has_input = !entry.text().trim().is_empty();
-            suggestions_button.set_sensitive(has_input);
-
-            if !has_input {
-                while let Some(child) = completion_list.first_child() {
-                    completion_list.remove(&child);
-                }
-                completion_buttons.borrow_mut().clear();
-                completion_panel.set_reveal_child(false);
-            }
-        });
-    }
-
     let show_completions = {
         let session = Rc::clone(&session);
         let input_entry = input_entry.clone();
@@ -773,8 +763,9 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
             for suggestion in suggestions.into_iter() {
                 let button = gtk::Button::with_label(&suggestion);
-                button.set_halign(gtk::Align::Fill);
-                button.set_hexpand(true);
+                button.set_halign(gtk::Align::Start);
+                button.set_hexpand(false);
+                button.set_size_request(COMPLETION_MIN_CHIP_WIDTH, -1);
                 button.add_css_class("flat");
 
                 let suggestion_index = completion_buttons.borrow().len();
@@ -831,7 +822,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 });
 
                 completion_buttons.borrow_mut().push(button.clone());
-                completion_list.append(&button);
+                completion_list.insert(&button, -1);
             }
 
             completion_panel.set_reveal_child(true);
@@ -839,8 +830,23 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     };
 
     {
+        let completion_panel = completion_panel.clone();
+        let completion_list = completion_list.clone();
+        let completion_buttons = Rc::clone(&completion_buttons);
         let show_completions = Rc::clone(&show_completions);
-        suggestions_button.connect_clicked(move |_| show_completions());
+        input_entry.connect_changed(move |entry| {
+            let has_input = !entry.text().trim().is_empty();
+
+            if has_input {
+                show_completions();
+            } else {
+                while let Some(child) = completion_list.first_child() {
+                    completion_list.remove(&child);
+                }
+                completion_buttons.borrow_mut().clear();
+                completion_panel.set_reveal_child(false);
+            }
+        });
     }
 
     {

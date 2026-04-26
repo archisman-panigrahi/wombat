@@ -93,7 +93,11 @@ impl NumbatSession {
     }
 
     pub fn completions_for(&self, word_part: &str) -> Vec<String> {
-        self.context.get_completions_for(word_part, false).collect()
+        self.context
+            .get_completions_for(word_part, true)
+            .filter(|completion| completion != word_part)
+            .take(64)
+            .collect()
     }
 
     pub fn handle_input(&mut self, input: &str) -> SubmissionOutcome {
