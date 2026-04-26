@@ -34,6 +34,16 @@
   <url type="vcs-browser">https://github.com/archisman-panigrahi/wombat</url>
 
   <releases>
+    <release version="0.4.1" date="2026-04-26">
+      <description>
+        <p>Bug fixes and improvements in this release:</p>
+        <ul>
+          <li>Improved wide-window layout so the calculator output area uses the available space instead of leaving large empty margins.</li>
+          <li>Added operator buttons for fast input of common operators like "+", "-", "*", "/", "^" in a mobile device.</li>
+        </ul>
+      </description>
+    </release>
+
     <release version="0.4.0" date="2026-04-25">
       <description>
         <p>New features and improvements in this release:</p>
@@ -82,6 +92,9 @@
     <control>pointing</control>
     <control>touch</control>
   </supports>
+  <requires>
+  <display_length compare="ge">280</display_length>
+  </requires>
 
   <branding>
     <color type="primary" scheme_preference="light">#f6d2d2</color>
