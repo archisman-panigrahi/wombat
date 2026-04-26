@@ -15,5 +15,5 @@
 - Export and import notebooks (with variables)
 - Import (and delete) additional Numbat modules
 - Create your own modules
-- Windows app -- check out https://github.com/flxzt/rnote and https://gist.github.com/pojntfx/36a1f41ffd34af7d2f3abe43646142e1
-- Android app
+- ~~Windows app -- check out https://github.com/flxzt/rnote and https://gist.github.com/pojntfx/36a1f41ffd34af7d2f3abe43646142e1~~ (canceled in favor of Numbat-app)
+- ~~Android app~~ (canceled in favor of Numbat-app)

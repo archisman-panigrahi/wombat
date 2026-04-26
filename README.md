@@ -10,6 +10,24 @@ Wombat is a scientific calculator using [Numbat](https://github.com/sharkdp/numb
 
 ![wombat](data/screenshots/wombat.png)
 
+## Features
+
+- High-precision scientific calculations powered by Numbat
+- Physical units and dimensional analysis, including natural unit conversions
+- Persistent live interpreter session for variables, functions, and imports
+- Scrollable, syntax-highlighted calculation history
+- Automatic completion suggestions for variables, functions, units, and constants
+- Tappable/clickable suggestions for touch and pointer workflows
+- Quick operator buttons for `+`, `-`, `*`, `/`, and `^`
+- Quick-insert buttons for common physical constants
+- Units, constants, and functions browsers with click-to-insert entries
+- Custom startup definitions for your own variables, units, and functions
+- Sidebar actions for syntax help, examples, reset, clear, fullscreen, and shortcuts
+- Mobile-friendly responsive layout with touch-friendly controls
+- Flatpak-friendly GTK/libadwaita interface for Linux desktops
+
+For Android and iOS, also see [Numbat App](https://github.com/sharkdp/numbat-app), a cross-platform Numbat app by Numbat's creator.
+
 ## Planned features
 
 See [Planned features](./todo.md).
