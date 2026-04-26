@@ -1,4 +1,6 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
+use std::fs;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use adw::prelude::*;
@@ -14,6 +16,9 @@ const NUMBAT_SYNTAX_URL: &str = "https://numbat.dev/docs/examples/example-numbat
 const NUMBAT_EXAMPLES_URL: &str = "https://numbat.dev/docs/basics/conversions/";
 const SIDEBAR_DESKTOP_MAX_WIDTH: f64 = 280.0;
 const SIDEBAR_MOBILE_MAX_WIDTH: f64 = 280.0;
+const SETTINGS_SCHEMA_ID: &str = "io.github.archisman_panigrahi.wombat";
+const SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP: &str = "show-operator-buttons-desktop";
+const OPERATOR_BUTTONS_DESKTOP_PREF_FILE: &str = "operator-buttons-desktop.conf";
 const STARTUP_BANNER_LARGE: &str = r#"
 ██╗    ██╗ ██████╗ ███╗   ███╗██████╗  █████╗ ████████╗
 ██║    ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝
@@ -120,6 +125,10 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     window.add_action(&show_keyboard_shortcuts_action);
     app.set_accels_for_action("win.show-keyboard-shortcuts", &["<Control>question"]);
 
+    let settings = gio::SettingsSchemaSource::default()
+        .and_then(|source| source.lookup(SETTINGS_SCHEMA_ID, true))
+        .map(|_| gio::Settings::new(SETTINGS_SCHEMA_ID));
+
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
     root.set_margin_top(HISTORY_MARGIN);
     root.set_margin_bottom(HISTORY_MARGIN);
@@ -143,33 +152,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         BANNER_SWITCH_WIDTH as f64,
         adw::LengthUnit::Px,
     ));
-    {
-        let history_buffer = history_buffer.clone();
-        let history_view_ref = history_view.clone();
-        let showing_startup = Rc::clone(&showing_startup);
-        let overlay_split_view = overlay_split_view.clone();
-        banner_breakpoint.connect_apply(move |_| {
-            overlay_split_view.set_collapsed(true);
-            overlay_split_view.set_max_sidebar_width(SIDEBAR_MOBILE_MAX_WIDTH);
-            if *showing_startup.borrow() {
-                set_startup_message(&history_buffer, &history_view_ref, STARTUP_BANNER_SMALL);
-            }
-        });
-    }
-    {
-        let history_buffer = history_buffer.clone();
-        let history_view_ref = history_view.clone();
-        let showing_startup = Rc::clone(&showing_startup);
-        let overlay_split_view = overlay_split_view.clone();
-        banner_breakpoint.connect_unapply(move |_| {
-            overlay_split_view.set_collapsed(false);
-            overlay_split_view.set_max_sidebar_width(SIDEBAR_DESKTOP_MAX_WIDTH);
-            if *showing_startup.borrow() {
-                set_startup_message(&history_buffer, &history_view_ref, STARTUP_BANNER_LARGE);
-            }
-        });
-    }
-    window.add_breakpoint(banner_breakpoint);
 
     let history_scroller = gtk::ScrolledWindow::builder()
         .hscrollbar_policy(gtk::PolicyType::Automatic)
@@ -217,6 +199,39 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     input_row.append(&suggestions_button);
     input_row.append(&run_button);
 
+    // Operator buttons are always shown on mobile; desktop has an explicit toggle.
+    let operators_revealer = gtk::Revealer::builder()
+        .transition_type(gtk::RevealerTransitionType::SlideDown)
+        .reveal_child(false)
+        .build();
+    let operators_row = gtk::FlowBox::new();
+    operators_row.set_margin_top(6);
+    operators_row.set_margin_bottom(2);
+    operators_row.set_halign(gtk::Align::Center);
+    operators_row.set_valign(gtk::Align::Start);
+    operators_row.set_max_children_per_line(8);
+    operators_row.set_selection_mode(gtk::SelectionMode::None);
+
+    for operator in ["+", "-", "*", "/", "^"] {
+        let btn = gtk::Button::with_label(operator);
+        btn.add_css_class("pill");
+        let entry_clone = input_entry.clone();
+        let token = operator.to_owned();
+        btn.connect_clicked(move |_| {
+            let current = entry_clone.text().to_string();
+            let insertion = if current.is_empty() || current.ends_with(' ') {
+                format!("{token} ")
+            } else {
+                format!(" {token} ")
+            };
+            let mut position = -1;
+            entry_clone.insert_text(&insertion, &mut position);
+            entry_clone.grab_focus();
+        });
+        operators_row.insert(&btn, -1);
+    }
+    operators_revealer.set_child(Some(&operators_row));
+
     // Physics constants buttons
     let constants_row = gtk::FlowBox::new();
     constants_row.set_margin_top(8);
@@ -259,8 +274,73 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     root.append(&history_scroller);
     root.append(&status_label);
     root.append(&input_row);
+    root.append(&operators_revealer);
     root.append(&completion_panel);
     root.append(&constants_row);
+
+    let desktop_operator_buttons_visible =
+        Rc::new(Cell::new(load_operator_buttons_pref(&settings)));
+    let operator_visibility_switch = gtk::Switch::builder()
+        .active(desktop_operator_buttons_visible.get())
+        .valign(gtk::Align::Center)
+        .build();
+    let sync_operator_buttons = Rc::new({
+        let overlay_split_view = overlay_split_view.clone();
+        let operator_visibility_switch = operator_visibility_switch.clone();
+        let operators_revealer = operators_revealer.clone();
+        let desktop_operator_buttons_visible = Rc::clone(&desktop_operator_buttons_visible);
+        move || {
+            let mobile = overlay_split_view.is_collapsed();
+            let show = mobile || desktop_operator_buttons_visible.get();
+            operator_visibility_switch.set_sensitive(!mobile);
+            operator_visibility_switch.set_active(show);
+            operators_revealer.set_reveal_child(show);
+        }
+    });
+    {
+        let overlay_split_view = overlay_split_view.clone();
+        let desktop_operator_buttons_visible = Rc::clone(&desktop_operator_buttons_visible);
+        let settings = settings.clone();
+        let sync_operator_buttons = Rc::clone(&sync_operator_buttons);
+        operator_visibility_switch.connect_active_notify(move |switch| {
+            if !overlay_split_view.is_collapsed() {
+                desktop_operator_buttons_visible.set(switch.is_active());
+                save_operator_buttons_pref(&settings, switch.is_active());
+            }
+            sync_operator_buttons();
+        });
+    }
+
+    let sync_layout = Rc::new({
+        let history_buffer = history_buffer.clone();
+        let history_view_ref = history_view.clone();
+        let showing_startup = Rc::clone(&showing_startup);
+        let overlay_split_view = overlay_split_view.clone();
+        let sync_operator_buttons = Rc::clone(&sync_operator_buttons);
+        move |collapsed: bool, max_sidebar_width: f64, startup_banner: &str| {
+            overlay_split_view.set_collapsed(collapsed);
+            overlay_split_view.set_max_sidebar_width(max_sidebar_width);
+            sync_operator_buttons();
+            if *showing_startup.borrow() {
+                set_startup_message(&history_buffer, &history_view_ref, startup_banner);
+            }
+        }
+    });
+    {
+        let sync_layout = Rc::clone(&sync_layout);
+        banner_breakpoint.connect_apply(move |_| {
+            sync_layout(true, SIDEBAR_MOBILE_MAX_WIDTH, STARTUP_BANNER_SMALL);
+        });
+    }
+    {
+        let sync_layout = Rc::clone(&sync_layout);
+        banner_breakpoint.connect_unapply(move |_| {
+            sync_layout(false, SIDEBAR_DESKTOP_MAX_WIDTH, STARTUP_BANNER_LARGE);
+        });
+    }
+    window.add_breakpoint(banner_breakpoint);
+
+    sync_operator_buttons();
 
     let calculator_clamp = adw::Clamp::new();
     calculator_clamp.set_maximum_size(860);
@@ -476,6 +556,15 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         clear_history_action.clone(),
     ));
 
+    let operator_row = adw::ActionRow::new();
+    operator_row.set_title("Show Operator Buttons");
+    operator_row.set_subtitle(
+        "Desktop: toggle +, -, *, /, and ^ quick-insert buttons (Ctrl+Shift+O). Mobile: always shown.",
+    );
+    operator_row.add_suffix(&operator_visibility_switch);
+    operator_row.set_activatable_widget(Some(&operator_visibility_switch));
+    sidebar_panel.append(&operator_row);
+
     sidebar_panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
 
     sidebar_panel.append(&make_sidebar_button(
@@ -606,6 +695,21 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         });
         window.add_action(&toggle_options_action);
         app.set_accels_for_action("win.toggle-options", &["F10"]);
+    }
+
+    {
+        let overlay_split_view = overlay_split_view.clone();
+        let operator_visibility_switch = operator_visibility_switch.clone();
+        let toggle_operator_buttons_action =
+            gio::SimpleAction::new("toggle-operator-buttons", None);
+        toggle_operator_buttons_action.connect_activate(move |_, _| {
+            if overlay_split_view.is_collapsed() {
+                return;
+            }
+            operator_visibility_switch.set_active(!operator_visibility_switch.is_active());
+        });
+        window.add_action(&toggle_operator_buttons_action);
+        app.set_accels_for_action("win.toggle-operator-buttons", &["<Control><Shift>O"]);
     }
 
     {
@@ -918,6 +1022,10 @@ fn build_shortcuts_dialog() -> adw::ShortcutsDialog {
     let input_section = adw::ShortcutsSection::new(Some("Input"));
     input_section.add(adw::ShortcutsItem::new("Run Input", "Return"));
     input_section.add(adw::ShortcutsItem::new("Show Suggestions", "Tab"));
+    input_section.add(adw::ShortcutsItem::new(
+        "Toggle Operator Buttons",
+        "<Control><Shift>O",
+    ));
     input_section.add(adw::ShortcutsItem::new("Previous Input", "Up"));
     input_section.add(adw::ShortcutsItem::new("Next Input", "Down"));
     dialog.add(input_section);
@@ -958,6 +1066,46 @@ fn previous_index(index: usize, button_count: usize) -> usize {
     } else {
         index.checked_sub(1).unwrap_or(button_count - 1)
     }
+}
+
+fn load_operator_buttons_pref(settings: &Option<gio::Settings>) -> bool {
+    settings
+        .as_ref()
+        .map(|settings| settings.boolean(SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP))
+        .unwrap_or_else(|| load_bool_pref(pref_path(), false))
+}
+
+fn save_operator_buttons_pref(settings: &Option<gio::Settings>, value: bool) {
+    if let Some(settings) = settings {
+        if let Err(err) = settings.set_boolean(SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP, value) {
+            eprintln!(
+                "Failed to persist setting {SETTINGS_KEY_SHOW_OPERATOR_BUTTONS_DESKTOP}: {err}"
+            );
+            save_bool_pref(pref_path(), value);
+        }
+    } else {
+        save_bool_pref(pref_path(), value);
+    }
+}
+
+fn pref_path() -> PathBuf {
+    gtk::glib::user_config_dir()
+        .join("wombat")
+        .join(OPERATOR_BUTTONS_DESKTOP_PREF_FILE)
+}
+
+fn load_bool_pref(path: PathBuf, default_value: bool) -> bool {
+    match fs::read_to_string(path) {
+        Ok(value) => value.trim().eq_ignore_ascii_case("true"),
+        Err(_) => default_value,
+    }
+}
+
+fn save_bool_pref(path: PathBuf, value: bool) {
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let _ = fs::write(path, if value { "true\n" } else { "false\n" });
 }
 
 fn next_index(index: usize, button_count: usize) -> usize {
