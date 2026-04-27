@@ -644,7 +644,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     ));
     sidebar_panel.append(&make_sidebar_button(
         "edit-clear-all-symbolic",
-        "Clear Inputs",
+        "Clear output",
         clear_history_action.clone(),
     ));
 
