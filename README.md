@@ -9,7 +9,7 @@
 Wombat is a scientific calculator for GNU/Linux using [Numbat](https://github.com/sharkdp/numbat) programming language. It keeps a live Numbat interpreter session in memory and shows the full output history in a scrollable log.
 Written in Rust, it uses GTK4+libadwaita and fully supports desktop and mobile devices running GNU/Linux. 
 
-For Android and iOS, also see [Numbat-app](https://github.com/sharkdp/numbat-app), a similar cross-platform by Numbat's creator.
+For Android and iOS, also see [Numbat-app](https://github.com/sharkdp/numbat-app), a cross-platform app by Numbat's creator, providing similar functionality.
 
 ![wombat](data/screenshots/wombat.png)
 
