@@ -5,11 +5,10 @@
 - ~~Add buttons which will show a list of all the functions~~
 - ~~Implement "`Tab` to autocomplete"~~
 - ~~Build flatpak (already builds locally, need to publish to Flathub/GitHub actions)~~
-- Debian package (code is ready, needs testing in Ubuntu 26.04 with latest libadwaita)
 - ~~Replace the sidebar reset/erase dialogs with  AdwAlertDialog~~
 - ~~Get rid of headerbar, similar to Foliate or Euphonica~~
 - ~~buttons for common fundamental constants (configurable buttons)~~
-- scroll down to very bottom after a command is run
+- ~~scroll down to very bottom after a command is run~~
 - ~~Close button in about dialog and a proper about dialog (details, report an issue, credits).~~
 - Better (colorful) theme, as in https://github.com/htkhiem/euphonica
 - Export and import notebooks (with variables)
@@ -17,3 +16,11 @@
 - Create your own modules
 - ~~Windows app -- check out https://github.com/flxzt/rnote and https://gist.github.com/pojntfx/36a1f41ffd34af7d2f3abe43646142e1~~ (canceled in favor of Numbat-app)
 - ~~Android app~~ (canceled in favor of Numbat-app)
+- Debian package (code is ready, needs testing in Ubuntu 26.04 with latest libadwaita)
+- After selecting some suggestion, the whole text input is selected, and the user has to press right arrow to not delete it. But, we should not select like that
+- Some icons (e.g. those belonging to functions, and online examples) are missing in some computers in flatpak install but they are not missing in some computers on flatpak install. Both are running LM 22, one XFCE (good) one cinnamon (missing icon). Both have Papirus set as the default theme.
+- Use smaller button size for operator buttons. Currently, only except in Arc theme in KDE, those buttons look exceptionally big.
+- When only one suggestion is present, tab should get it. When some part is common for all suggestions, tab should get upto the common part.
+- disable currency conversion altogether (there is a Numbat config for that)
+- Make the number of significant digits shown editable
+- update screenshots
