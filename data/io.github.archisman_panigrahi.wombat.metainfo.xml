@@ -3,6 +3,17 @@
   <id>io.github.archisman_panigrahi.wombat</id>
   <name>Wombat</name>
   <summary>Unit aware scientific calculator</summary>
+  <keywords>
+    <keyword>Calculator</keyword>
+    <keyword>Scientific</keyword>
+    <keyword>Precision</keyword>
+    <keyword>Unit</keyword>
+    <keyword>Converter</keyword>
+    <keyword>Conversion</keyword>
+    <keyword>Math</keyword>
+    <keyword>Physics</keyword>
+    <keyword>Numbat</keyword>
+  </keywords>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
 
