@@ -51,7 +51,7 @@ yay -S wombat
 Published on the Flathub app store:
 
 <a href='https://flathub.org/apps/io.github.archisman_panigrahi.wombat'>
-    <img height='55' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
+    <img alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
 </a>
 
 Here is [how to set up Flathub](https://flathub.org/en/setup) on your distro so that you can install this app.
