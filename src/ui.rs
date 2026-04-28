@@ -218,7 +218,6 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
     for operator in ["+", "-", "*", "/", "^"] {
         let btn = gtk::Button::with_label(operator);
-        btn.add_css_class("pill");
         let entry_clone = input_entry.clone();
         let token = operator.to_owned();
         btn.connect_clicked(move |_| {
