@@ -534,7 +534,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             open_constants_browser_action.clone(),
         ),
         (
-            "format-text-code-symbolic",
+            "accessories-calculator-symbolic",
             "Functions",
             open_functions_browser_action.clone(),
         ),
@@ -602,7 +602,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         open_constants_browser_action.clone(),
     ));
     sidebar_panel.append(&make_sidebar_button(
-        "format-text-code-symbolic",
+        "accessories-calculator-symbolic",
         "Functions Browser",
         open_functions_browser_action.clone(),
     ));
@@ -615,12 +615,12 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     sidebar_panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
 
     sidebar_panel.append(&make_sidebar_button(
-        "emblem-documents-symbolic",
+        "web-browser-symbolic",
         "Detailed Numbat Syntax",
         open_numbat_syntax_action.clone(),
     ));
     sidebar_panel.append(&make_sidebar_button(
-        "globe-symbolic",
+        "web-browser-symbolic",
         "Online Examples",
         open_examples_action.clone(),
     ));
