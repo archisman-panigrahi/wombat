@@ -24,3 +24,4 @@
 - disable currency conversion altogether (there is a Numbat config for that)
 - Make the number of significant digits shown editable
 - update screenshots
+- unicode input https://numbat.dev/docs/unicode-input/
