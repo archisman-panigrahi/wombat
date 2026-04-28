@@ -34,6 +34,17 @@
   <url type="vcs-browser">https://github.com/archisman-panigrahi/wombat</url>
 
   <releases>
+    <release version="0.6.0" date="2026-04-28">
+      <description>
+        <p>Bug fixes and improvements in this release:</p>
+        <ul>
+          <li>Better behavior of suggestions completion.</li>
+          <li>Operator buttons have a more consistent style across themes.</li>
+          <li>Added the Ctrl+? shortcut hint to the Keyboard Shortcuts entry in the Options panel.</li>
+        </ul>
+      </description>
+    </release>
+
     <release version="0.5.0" date="2026-04-26">
       <description>
         <p>New features and improvements in this release:</p>
@@ -115,7 +126,7 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/5c6f0792ee3fac0afed9baaba3febcaff84eb09b/data/screenshots/wombat.png</image>
+      <image>https://raw.githubusercontent.com/archisman-panigrahi/wombat/1a95c69f87e60e3f2d6b0e0edab8873743410f22/data/screenshots/wombat.png</image>
       <caption>Main Window</caption>
     </screenshot>
 
