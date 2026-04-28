@@ -25,3 +25,4 @@
 - Make the number of significant digits shown editable
 - update screenshots
 - unicode input https://numbat.dev/docs/unicode-input/
+- Clicking on the operators selects all text in input box. That should not happen.
