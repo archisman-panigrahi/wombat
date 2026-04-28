@@ -654,11 +654,22 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         "About",
         show_credits_action.clone(),
     ));
-    sidebar_panel.append(&make_sidebar_button(
-        "preferences-desktop-keyboard-shortcuts-symbolic",
-        "Keyboard Shortcuts",
-        show_keyboard_shortcuts_action.clone(),
-    ));
+    {
+        let button = make_sidebar_shortcut_button(
+            "preferences-desktop-keyboard-shortcuts-symbolic",
+            "Keyboard Shortcuts",
+            "Ctrl+?",
+        );
+        let overlay_split_view = overlay_split_view.clone();
+        button.connect_clicked(move |_| {
+            show_keyboard_shortcuts_action.activate(None);
+            if overlay_split_view.is_collapsed() {
+                overlay_split_view.set_show_sidebar(false);
+            }
+        });
+        sidebar_buttons.borrow_mut().push(button.clone());
+        sidebar_panel.append(&button);
+    }
     {
         let button = make_sidebar_shortcut_button("view-fullscreen-symbolic", "Fullscreen", "F11");
         let window = window.clone();
