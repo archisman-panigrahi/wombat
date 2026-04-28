@@ -1276,8 +1276,10 @@ fn insert_entry_text(entry: &gtk::Entry, insertion: &str) {
     let mut next = current;
     next.insert_str(cursor, &inserted);
     entry.set_text(&next);
-    entry.set_position((cursor + inserted.len()) as i32);
     entry.grab_focus();
+    let new_cursor = (cursor + inserted.len()) as i32;
+    entry.set_position(new_cursor);
+    entry.select_region(new_cursor, new_cursor);
 }
 
 fn show_custom_definitions_dialog(
