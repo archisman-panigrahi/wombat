@@ -919,11 +919,13 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                     let prefix_start = completion_prefix_start(&text, cursor);
 
                     text.replace_range(prefix_start..cursor, &suggestion);
+                    let new_cursor = text[..prefix_start + suggestion.len()].chars().count() as i32;
                     input_entry.set_text(&text);
-                    input_entry.set_position(-1);
                     completion_panel.set_reveal_child(false);
                     status_label.set_text(READY_STATUS);
                     input_entry.grab_focus();
+                    input_entry.set_position(new_cursor);
+                    input_entry.select_region(new_cursor, new_cursor);
                 });
 
                 completion_buttons.borrow_mut().push(button.clone());
