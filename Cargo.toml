@@ -8,4 +8,10 @@ build = "build.rs"
 [dependencies]
 adw = { package = "libadwaita", version = "0.9", features = ["v1_9"] }
 gtk = { package = "gtk4", version = "0.11" }
-numbat = ">1.11.0"
+numbat = { version = ">1.11.0", default-features = false }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+panic = "abort"
+strip = true

@@ -59,7 +59,7 @@ impl SharedOutput {
 
 pub struct NumbatSession {
     module_paths: Vec<PathBuf>,
-    context: Context,
+    context: Option<Context>,
     command_runner: CommandRunner<'static, ()>,
     output: SharedOutput,
     clear_requested: Rc<Cell<bool>>,
@@ -74,11 +74,7 @@ impl NumbatSession {
 
     pub fn new_with_custom_code(custom_code: &str) -> Self {
         let module_paths = configured_module_paths();
-        let mut context = make_context(&module_paths);
         let custom_code = custom_code.to_string();
-        if let Err(error) = apply_custom_code_to_context(&mut context, &custom_code) {
-            eprintln!("Failed to load custom definitions: {error}");
-        }
         let output = SharedOutput::new();
         let clear_requested = Rc::new(Cell::new(false));
 
@@ -96,7 +92,7 @@ impl NumbatSession {
 
         Self {
             module_paths,
-            context,
+            context: None,
             command_runner,
             output,
             clear_requested,
@@ -104,12 +100,18 @@ impl NumbatSession {
         }
     }
 
-    pub fn completions_for(&self, word_part: &str) -> Vec<String> {
-        self.context
-            .get_completions_for(word_part, true)
-            .filter(|completion| completion != word_part)
-            .take(64)
-            .collect()
+    pub fn completions_for(&mut self, word_part: &str) -> Vec<String> {
+        match self.ensure_context() {
+            Ok(context) => context
+                .get_completions_for(word_part, true)
+                .filter(|completion| completion != word_part)
+                .take(64)
+                .collect(),
+            Err(error) => {
+                eprintln!("Failed to load custom definitions: {error}");
+                Vec::new()
+            }
+        }
     }
 
     pub fn handle_input(&mut self, input: &str) -> SubmissionOutcome {
@@ -129,19 +131,15 @@ impl NumbatSession {
 
         let mut is_error = false;
         let mut status = None;
-        let control_flow =
-            match self
-                .command_runner
-                .try_run_command(trimmed, &mut self.context, &mut ())
-            {
-                Ok(control_flow) => control_flow,
-                Err(error) => {
-                    self.output.push_text(&format!("{error:?}"));
-                    is_error = true;
-                    status = Some("Command error");
-                    CommandControlFlow::Continue
-                }
-            };
+        let control_flow = match self.with_context_for_command(trimmed) {
+            Ok(control_flow) => control_flow,
+            Err(error) => {
+                self.output.push_text(&error);
+                is_error = true;
+                status = Some("Command error");
+                CommandControlFlow::Continue
+            }
+        };
 
         let mut reset_session = false;
         let mut quit = false;
@@ -189,37 +187,71 @@ impl NumbatSession {
     }
 
     fn reset_context(&mut self) {
-        self.context = make_context(&self.module_paths);
-        if let Err(error) = apply_custom_code_to_context(&mut self.context, &self.custom_code) {
-            self.output
-                .push_text(&format!("Failed to load custom definitions: {error}"));
+        match self.make_context_with_custom_code(&self.custom_code) {
+            Ok(context) => self.context = Some(context),
+            Err(error) => {
+                self.context = None;
+                self.output
+                    .push_text(&format!("Failed to load custom definitions: {error}"));
+            }
         }
     }
 
-    pub fn set_custom_code(&mut self, custom_code: &str) -> Result<(), String> {
+    fn ensure_context(&mut self) -> Result<&mut Context, String> {
+        if self.context.is_none() {
+            self.context = Some(self.make_context_with_custom_code(&self.custom_code)?);
+        }
+
+        Ok(self.context.as_mut().expect("context was just initialized"))
+    }
+
+    fn make_context_with_custom_code(&self, custom_code: &str) -> Result<Context, String> {
         let mut context = make_context(&self.module_paths);
         apply_custom_code_to_context(&mut context, custom_code)?;
-        self.context = context;
+        Ok(context)
+    }
+
+    fn with_context_for_command(&mut self, input: &str) -> Result<CommandControlFlow, String> {
+        self.ensure_context()?;
+        let context = self.context.as_mut().expect("context was just initialized");
+        self.command_runner
+            .try_run_command(input, context, &mut ())
+            .map_err(|error| format!("{error:?}"))
+    }
+
+    pub fn set_custom_code(&mut self, custom_code: &str) -> Result<(), String> {
+        let context = self.make_context_with_custom_code(custom_code)?;
+        self.context = Some(context);
         self.custom_code = custom_code.to_string();
         Ok(())
     }
 
-    pub fn constants(&self) -> Vec<String> {
-        let mut constants: Vec<_> = self
-            .context
-            .variable_names()
-            .map(|name| name.to_string())
-            .collect();
-        constants.sort();
-        constants.dedup();
-        constants
+    pub fn constants(&mut self) -> Vec<String> {
+        match self.ensure_context() {
+            Ok(context) => {
+                let mut constants: Vec<_> = context
+                    .variable_names()
+                    .map(|name| name.to_string())
+                    .collect();
+                constants.sort();
+                constants.dedup();
+                constants
+            }
+            Err(error) => {
+                eprintln!("Failed to load custom definitions: {error}");
+                Vec::new()
+            }
+        }
     }
 
-    pub fn unit_groups(&self) -> Vec<UnitBrowserGroup> {
+    pub fn unit_groups(&mut self) -> Vec<UnitBrowserGroup> {
         use std::collections::BTreeMap;
 
         let mut groups: BTreeMap<String, Vec<UnitBrowserItem>> = BTreeMap::new();
-        for (unit_name, (_base_representation, metadata)) in self.context.unit_representations() {
+        let Ok(context) = self.ensure_context() else {
+            return Vec::new();
+        };
+        for (unit_name, (_base_representation, metadata)) in context.unit_representations() {
             let dimension = plain_text_format(&metadata.readable_type, false).to_string();
             if dimension == "Scalar" || dimension.is_empty() {
                 continue;
@@ -264,9 +296,11 @@ impl NumbatSession {
         groups
     }
 
-    pub fn functions(&self) -> Vec<FunctionBrowserItem> {
-        let mut functions: Vec<_> = self
-            .context
+    pub fn functions(&mut self) -> Vec<FunctionBrowserItem> {
+        let Ok(context) = self.ensure_context() else {
+            return Vec::new();
+        };
+        let mut functions: Vec<_> = context
             .functions()
             .map(|function| FunctionBrowserItem {
                 fn_name: function.fn_name.to_string(),
@@ -291,14 +325,14 @@ impl NumbatSession {
             print_fn: Box::new(move |markup| output.push_markup(markup)),
         };
 
-        let (statements, result) = self
-            .context
+        let context = self.ensure_context()?;
+        let (statements, result) = context
             .interpret_with_settings(&mut settings, input, CodeSource::Text)
             .map_err(|error| error.to_string())?;
 
         let result_markup = result.to_markup(
             statements.last(),
-            self.context.dimension_registry(),
+            context.dimension_registry(),
             true,
             true,
             &FormatOptions::default(),
@@ -384,7 +418,6 @@ fn make_context(module_paths: &[PathBuf]) -> Context {
     );
 
     let mut context = Context::new(importer);
-    context.load_currency_module_on_demand(true);
     context.set_terminal_width(Some(84));
 
     let _ = context.interpret("use prelude", CodeSource::Internal);

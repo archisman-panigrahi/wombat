@@ -855,7 +855,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
             }
 
             let prefix = input[prefix_start..cursor].to_string();
-            let suggestions = session.borrow().completions_for(&prefix);
+            let suggestions = session.borrow_mut().completions_for(&prefix);
 
             if suggestions.is_empty() {
                 completion_panel.set_reveal_child(false);
@@ -1081,7 +1081,7 @@ fn show_constants_browser(
     session: Rc<RefCell<NumbatSession>>,
     input_entry: &gtk::Entry,
 ) {
-    let constants = session.borrow().constants();
+    let constants = session.borrow_mut().constants();
     let content = gtk::FlowBox::new();
     content.set_margin_top(6);
     content.set_margin_bottom(6);
@@ -1113,7 +1113,7 @@ fn show_units_browser(
     session: Rc<RefCell<NumbatSession>>,
     input_entry: &gtk::Entry,
 ) {
-    let groups = session.borrow().unit_groups();
+    let groups = session.borrow_mut().unit_groups();
     let content = gtk::Box::new(gtk::Orientation::Vertical, 6);
     content.set_margin_top(6);
     content.set_margin_bottom(6);
@@ -1167,7 +1167,7 @@ fn show_functions_browser(
     use std::collections::BTreeMap;
 
     let mut groups: BTreeMap<String, Vec<_>> = BTreeMap::new();
-    for function in session.borrow().functions() {
+    for function in session.borrow_mut().functions() {
         groups
             .entry(function.module.clone())
             .or_default()
