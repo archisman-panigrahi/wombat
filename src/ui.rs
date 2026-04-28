@@ -219,17 +219,8 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     for operator in ["+", "-", "*", "/", "^"] {
         let btn = gtk::Button::with_label(operator);
         let entry_clone = input_entry.clone();
-        let token = operator.to_owned();
         btn.connect_clicked(move |_| {
-            let current = entry_clone.text().to_string();
-            let insertion = if current.is_empty() || current.ends_with(' ') {
-                format!("{token} ")
-            } else {
-                format!(" {token} ")
-            };
-            let mut position = -1;
-            entry_clone.insert_text(&insertion, &mut position);
-            entry_clone.grab_focus();
+            insert_entry_text(&entry_clone, operator);
         });
         operators_row.insert(&btn, -1);
     }
