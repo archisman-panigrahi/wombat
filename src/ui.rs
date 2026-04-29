@@ -24,6 +24,13 @@ const COMPLETION_MIN_CHIP_WIDTH: i32 = 96;
 const READY_STATUS: &str = "Ready when you are!";
 const SUGGESTIONS_STATUS: &str =
     "Suggested (press Tab to autocomplete and browse through suggestions, Esc to restart typing).";
+const APP_CSS: &str = r#"
+button.completion-suggestion:focus {
+    background-color: alpha(@accent_bg_color, 0.12);
+    box-shadow: inset 0 0 0 2px @accent_bg_color;
+    color: @window_fg_color;
+}
+"#;
 const CUSTOM_DEFINITIONS_PLACEHOLDER: &str = "# Examples:
 let my_const = 42
 unit foot_inch = foot + inch
@@ -45,6 +52,8 @@ const STARTUP_BANNER_SMALL: &str = r#"
 const BANNER_SWITCH_WIDTH: i32 = 500;
 
 pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
+    install_app_css();
+
     let custom_definitions_text = load_custom_definitions();
     let session = Rc::new(RefCell::new(NumbatSession::new_with_custom_code(
         &custom_definitions_text,
@@ -871,6 +880,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 button.set_hexpand(false);
                 button.set_size_request(COMPLETION_MIN_CHIP_WIDTH, -1);
                 button.add_css_class("flat");
+                button.add_css_class("completion-suggestion");
 
                 let suggestion_index = completion_buttons.borrow().len();
                 let completion_buttons_for_keys = Rc::clone(&completion_buttons);
@@ -1383,6 +1393,19 @@ fn move_entry_cursor_to(entry: &gtk::Entry, cursor: i32) {
 
 fn move_entry_cursor_to_end(entry: &gtk::Entry) {
     move_entry_cursor_to(entry, entry.text().chars().count() as i32);
+}
+
+fn install_app_css() {
+    let provider = gtk::CssProvider::new();
+    provider.load_from_data(APP_CSS);
+
+    if let Some(display) = gtk::gdk::Display::default() {
+        gtk::style_context_add_provider_for_display(
+            &display,
+            &provider,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
+    }
 }
 
 fn show_custom_definitions_dialog(
