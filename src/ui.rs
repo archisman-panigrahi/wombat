@@ -22,7 +22,8 @@ const COMPLETION_ROW_HEIGHT: i32 = 40;
 const COMPLETION_VISIBLE_ROWS: i32 = 3;
 const COMPLETION_MIN_CHIP_WIDTH: i32 = 96;
 const READY_STATUS: &str = "Ready when you are!";
-const SUGGESTIONS_STATUS: &str = "Suggested (press Tab to autocomplete).";
+const SUGGESTIONS_STATUS: &str =
+    "Suggested (press Tab to autocomplete and browse through suggestions, Esc to restart typing).";
 const CUSTOM_DEFINITIONS_PLACEHOLDER: &str = "# Examples:
 let my_const = 42
 unit foot_inch = foot + inch
@@ -911,6 +912,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                         completion_panel_for_keys.set_reveal_child(false);
                         status_label_for_keys.set_text(READY_STATUS);
                         input_entry_for_keys.grab_focus();
+                        move_entry_cursor_to_end(&input_entry_for_keys);
                         gtk::glib::Propagation::Stop
                     }
                     _ => gtk::glib::Propagation::Proceed,
@@ -938,8 +940,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                     completion_panel.set_reveal_child(false);
                     status_label.set_text(READY_STATUS);
                     input_entry.grab_focus();
-                    input_entry.set_position(new_cursor);
-                    input_entry.select_region(new_cursor, new_cursor);
+                    move_entry_cursor_to(&input_entry, new_cursor);
                 });
 
                 completion_buttons.borrow_mut().push(button.clone());
@@ -1039,7 +1040,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
 
                 *history_cursor.borrow_mut() = Some(next_index);
                 input_entry_for_keys.set_text(&history[next_index]);
-                input_entry_for_keys.set_position(-1);
+                move_entry_cursor_to_end(&input_entry_for_keys);
                 gtk::glib::Propagation::Stop
             }
             gtk::gdk::Key::Down => {
@@ -1063,12 +1064,12 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                     let next_index = idx + 1;
                     *history_cursor.borrow_mut() = Some(next_index);
                     input_entry_for_keys.set_text(&history[next_index]);
-                    input_entry_for_keys.set_position(-1);
+                    move_entry_cursor_to_end(&input_entry_for_keys);
                 } else {
                     *history_cursor.borrow_mut() = None;
                     let restored = draft_input.borrow().clone();
                     input_entry_for_keys.set_text(&restored);
-                    input_entry_for_keys.set_position(-1);
+                    move_entry_cursor_to_end(&input_entry_for_keys);
                 }
 
                 gtk::glib::Propagation::Stop
@@ -1143,8 +1144,7 @@ fn complete_common_suggestion(
     input_entry.set_text(&text);
     completion_edit_in_progress.set(false);
     input_entry.grab_focus();
-    input_entry.set_position(new_cursor);
-    input_entry.select_region(new_cursor, new_cursor);
+    move_entry_cursor_to(input_entry, new_cursor);
 
     Some(suggestions.len() == 1)
 }
@@ -1373,8 +1373,16 @@ fn insert_entry_text(entry: &gtk::Entry, insertion: &str) {
     entry.set_text(&next);
     entry.grab_focus();
     let new_cursor = (cursor + inserted.len()) as i32;
-    entry.set_position(new_cursor);
-    entry.select_region(new_cursor, new_cursor);
+    move_entry_cursor_to(entry, new_cursor);
+}
+
+fn move_entry_cursor_to(entry: &gtk::Entry, cursor: i32) {
+    entry.set_position(cursor);
+    entry.select_region(cursor, cursor);
+}
+
+fn move_entry_cursor_to_end(entry: &gtk::Entry) {
+    move_entry_cursor_to(entry, entry.text().chars().count() as i32);
 }
 
 fn show_custom_definitions_dialog(
