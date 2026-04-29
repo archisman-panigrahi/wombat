@@ -22,7 +22,7 @@ const COMPLETION_ROW_HEIGHT: i32 = 40;
 const COMPLETION_VISIBLE_ROWS: i32 = 3;
 const COMPLETION_MIN_CHIP_WIDTH: i32 = 96;
 const READY_STATUS: &str = "Ready when you are!";
-const SUGGESTIONS_STATUS: &str = "Suggested (press Tab for quick access).";
+const SUGGESTIONS_STATUS: &str = "Suggested (press Tab to autocomplete).";
 const CUSTOM_DEFINITIONS_PLACEHOLDER: &str = "# Examples:
 let my_const = 42
 unit foot_inch = foot + inch
@@ -52,6 +52,7 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
     let command_history: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
     let history_cursor: Rc<RefCell<Option<usize>>> = Rc::new(RefCell::new(None));
     let draft_input: Rc<RefCell<String>> = Rc::new(RefCell::new(String::new()));
+    let completion_edit_in_progress = Rc::new(Cell::new(false));
     let showing_startup: Rc<RefCell<bool>> = Rc::new(RefCell::new(true));
 
     let window = adw::ApplicationWindow::builder()
@@ -944,7 +945,12 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let status_label = status_label.clone();
         let completion_buttons = Rc::clone(&completion_buttons);
         let show_completions = Rc::clone(&show_completions);
+        let completion_edit_in_progress = Rc::clone(&completion_edit_in_progress);
         input_entry.connect_changed(move |entry| {
+            if completion_edit_in_progress.get() {
+                return;
+            }
+
             let has_input = !entry.text().trim().is_empty();
 
             if has_input {
@@ -964,6 +970,8 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         let command_history = Rc::clone(&command_history);
         let history_cursor = Rc::clone(&history_cursor);
         let draft_input = Rc::clone(&draft_input);
+        let session = Rc::clone(&session);
+        let completion_edit_in_progress = Rc::clone(&completion_edit_in_progress);
         let input_entry_for_keys = input_entry.clone();
         let completion_panel = completion_panel.clone();
         let completion_buttons = Rc::clone(&completion_buttons);
@@ -973,10 +981,25 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
         key_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
         key_controller.connect_key_pressed(move |_, key, _, _| match key {
             gtk::gdk::Key::Tab => {
-                if completion_panel.reveals_child() && !completion_buttons.borrow().is_empty() {
-                    focus_first_button(&completion_buttons);
-                } else {
-                    show_completions();
+                match complete_common_suggestion(
+                    &session,
+                    &input_entry_for_keys,
+                    &completion_edit_in_progress,
+                ) {
+                    Some(true) => {
+                        completion_panel.set_reveal_child(false);
+                        status_label.set_text(READY_STATUS);
+                    }
+                    Some(false) => {
+                        completion_panel.set_reveal_child(true);
+                        status_label.set_text(SUGGESTIONS_STATUS);
+                    }
+                    None if completion_panel.reveals_child()
+                        && !completion_buttons.borrow().is_empty() =>
+                    {
+                        focus_first_button(&completion_buttons);
+                    }
+                    None => show_completions(),
                 }
                 gtk::glib::Propagation::Stop
             }
@@ -1074,6 +1097,66 @@ fn completion_prefix_start(text: &str, cursor: usize) -> usize {
     }
 
     prefix_start
+}
+
+fn complete_common_suggestion(
+    session: &Rc<RefCell<NumbatSession>>,
+    input_entry: &gtk::Entry,
+    completion_edit_in_progress: &Cell<bool>,
+) -> Option<bool> {
+    let mut text = input_entry.text().to_string();
+    let cursor = input_entry.position().max(0) as usize;
+    let cursor = text
+        .char_indices()
+        .nth(cursor)
+        .map(|(index, _)| index)
+        .unwrap_or_else(|| text.len());
+    let prefix_start = completion_prefix_start(&text, cursor);
+
+    if prefix_start >= cursor {
+        return None;
+    }
+
+    let prefix = &text[prefix_start..cursor];
+    let suggestions = session.borrow_mut().completions_for(prefix);
+    let common_prefix = common_suggestion_prefix(&suggestions)?;
+
+    if common_prefix.len() <= prefix.len() || !common_prefix.starts_with(prefix) {
+        return None;
+    }
+
+    text.replace_range(prefix_start..cursor, &common_prefix);
+    let new_cursor = text[..prefix_start + common_prefix.len()].chars().count() as i32;
+    completion_edit_in_progress.set(true);
+    input_entry.set_text(&text);
+    completion_edit_in_progress.set(false);
+    input_entry.grab_focus();
+    input_entry.set_position(new_cursor);
+    input_entry.select_region(new_cursor, new_cursor);
+
+    Some(suggestions.len() == 1)
+}
+
+fn common_suggestion_prefix(suggestions: &[String]) -> Option<String> {
+    let mut suggestions = suggestions.iter();
+    let mut common = suggestions.next()?.clone();
+
+    for suggestion in suggestions {
+        let mut common_byte_len = 0;
+        for (left, right) in common.chars().zip(suggestion.chars()) {
+            if left != right {
+                break;
+            }
+            common_byte_len += left.len_utf8();
+        }
+        common.truncate(common_byte_len);
+
+        if common.is_empty() {
+            break;
+        }
+    }
+
+    Some(common)
 }
 
 fn show_constants_browser(
@@ -1554,5 +1637,40 @@ fn next_index(index: usize, button_count: usize) -> usize {
         0
     } else {
         (index + 1) % button_count
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::common_suggestion_prefix;
+
+    #[test]
+    fn common_suggestion_prefix_completes_single_suggestion() {
+        let suggestions = vec!["bohr_radius".to_string()];
+
+        assert_eq!(
+            common_suggestion_prefix(&suggestions),
+            Some("bohr_radius".to_string())
+        );
+    }
+
+    #[test]
+    fn common_suggestion_prefix_completes_shared_portion() {
+        let suggestions = vec!["bohr_radius".to_string(), "bohr_magneton".to_string()];
+
+        assert_eq!(
+            common_suggestion_prefix(&suggestions),
+            Some("bohr_".to_string())
+        );
+    }
+
+    #[test]
+    fn common_suggestion_prefix_handles_utf8_boundaries() {
+        let suggestions = vec!["café_radius".to_string(), "café_magneton".to_string()];
+
+        assert_eq!(
+            common_suggestion_prefix(&suggestions),
+            Some("café_".to_string())
+        );
     }
 }
