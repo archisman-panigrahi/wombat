@@ -878,7 +878,19 @@ pub fn build_window(app: &adw::Application) -> adw::ApplicationWindow {
                 let status_label_for_keys = status_label.clone();
                 let key_controller = gtk::EventControllerKey::new();
                 key_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
-                key_controller.connect_key_pressed(move |_, key, _, _| match key {
+                key_controller.connect_key_pressed(move |_, key, _, state| match key {
+                    gtk::gdk::Key::Tab | gtk::gdk::Key::ISO_Left_Tab => {
+                        let button_count = completion_buttons_for_keys.borrow().len();
+                        let is_backward = key == gtk::gdk::Key::ISO_Left_Tab
+                            || state.contains(gtk::gdk::ModifierType::SHIFT_MASK);
+                        let target_index = if is_backward {
+                            previous_index(suggestion_index, button_count)
+                        } else {
+                            next_index(suggestion_index, button_count)
+                        };
+                        focus_button(&completion_buttons_for_keys, target_index);
+                        gtk::glib::Propagation::Stop
+                    }
                     gtk::gdk::Key::Up => {
                         let button_count = completion_buttons_for_keys.borrow().len();
                         focus_button(
