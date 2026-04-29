@@ -45,6 +45,16 @@
   <url type="vcs-browser">https://github.com/archisman-panigrahi/wombat</url>
 
   <releases>
+    <release version="0.7.0" date="2026-04-29">
+      <description>
+        <p>Bug fixes and improvements in this release:</p>
+        <ul>
+          <li>Improved keyboard navigation and focus handling in the suggestion bar.</li>
+          <li>Reduced memory usage by switching to Cairo and disabling unnecessary Numbat features (currency and plots).</li>
+        </ul>
+      </description>
+    </release>
+
     <release version="0.6.0" date="2026-04-28">
       <description>
         <p>Bug fixes and improvements in this release:</p>

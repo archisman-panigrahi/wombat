@@ -22,8 +22,7 @@ const COMPLETION_ROW_HEIGHT: i32 = 40;
 const COMPLETION_VISIBLE_ROWS: i32 = 3;
 const COMPLETION_MIN_CHIP_WIDTH: i32 = 96;
 const READY_STATUS: &str = "Ready when you are!";
-const SUGGESTIONS_STATUS: &str =
-    "Suggested (press Tab to autocomplete and browse through suggestions, Esc to restart typing).";
+const SUGGESTIONS_STATUS: &str = "Suggestions: Tab/Shift+Tab navigate, Esc to restart typing.";
 const APP_CSS: &str = r#"
 button.completion-suggestion:focus {
     background-color: alpha(@accent_bg_color, 0.12);
