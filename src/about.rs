@@ -7,7 +7,7 @@ pub fn build_about_dialog() -> adw::AboutDialog {
         .application_name("Wombat")
         .developer_name("Archisman Panigrahi")
         .developers(["Archisman Panigrahi https://github.com/archisman-panigrahi"])
-        .artists(["Gemini AI and Archisman Panigrahi"])
+        .artists(["Gemini AI, Archisman Panigrahi and gnoman"])
         .designers(["Archisman Panigrahi https://github.com/archisman-panigrahi"])
         .comments("High-precision scientific calculator with full support for physical units, powered by Numbat programming language.\n")
         .version(env!("CARGO_PKG_VERSION"))
