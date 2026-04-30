@@ -46,9 +46,9 @@ Available on the [AUR](https://aur.archlinux.org/packages/wombat):
 yay -S wombat
 ```
 
-### Other distros
+### Other distros (Ubuntu, Mint, Fedora, [and more](https://flathub.org/en/setup))
 
-Published on the Flathub app store:
+Published on the [Flathub](https://flathub.org/) app store:
 
 <a href='https://flathub.org/apps/io.github.archisman_panigrahi.wombat'>
     <img alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
